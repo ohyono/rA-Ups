@@ -620,6 +620,15 @@ enum e_memorial_dungeon_command : uint16 {
 	COMMAND_MEMORIALDUNGEON_DESTROY_FORCE = 0x3,
 };
 
+#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
+struct s_next_dropitem_special {
+	uint32 rent_duration = 0;		// Lease duration, unit: second (props with a lease time greater than 0 will expire after the time expires)
+	int8 bound = -1;				// Item binding type (set to -1 for no special control)
+	int8 drop_effect = -1;			// The beam of light when the prop falls to the ground (set to -1 to respect the configuration in the DB)
+};
+extern s_next_dropitem_special next_dropitem_special;
+#endif // Pandas_ScriptCommand_Next_Dropitem_Special
+
 enum e_exitem_add_result : uint8 {
 	EXITEM_ADD_SUCCEED,
 	EXITEM_ADD_FAILED_OVERWEIGHT,

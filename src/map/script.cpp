@@ -361,7 +361,7 @@ extern short current_equip_item_index; //for New CARDS Scripts. It contains Inve
 extern unsigned int current_equip_combo_pos;
 
 int potion_flag=0; //For use on Alchemist improved potions/Potion Pitcher. [Skotlex]
-int potion_hp=0, potion_per_hp=0, potion_sp=0, potion_per_sp=0;
+int potion_hp=0, potion_per_hp=0, potion_sp=0, potion_per_sp=0, potion_ap=0, potion_per_ap=0;
 int potion_target = 0;
 unsigned int *generic_ui_array = NULL;
 unsigned int generic_ui_array_size = 0;
@@ -6027,7 +6027,7 @@ BUILDIN_FUNC(itemheal)
 	if (!script_charid2sd(4,sd))
 		return SCRIPT_CMD_SUCCESS;
 
-	pc_itemheal(sd,sd->itemid,hp,sp);
+	pc_itemheal(sd,sd->itemid,hp,sp,0);
 	return SCRIPT_CMD_SUCCESS;
 }
 
@@ -6065,6 +6065,50 @@ BUILDIN_FUNC(percentheal)
 		hp = 0;
 
 	pc_percentheal(sd,hp,sp);
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/*==========================================
+ * Force Heal a player (hp, sp and ap)
+ *------------------------------------------*/
+BUILDIN_FUNC(fullheal)
+{
+	TBL_PC *sd;
+	int hp,sp,ap;
+
+	if (!script_charid2sd(5,sd))
+		return SCRIPT_CMD_SUCCESS;
+
+	hp=script_getnum(st,2);
+	sp=script_getnum(st,3);
+	ap=script_getnum(st,4);
+	status_heal(&sd->bl, hp, sp, ap, 1);
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/*==========================================
+ * Heal a player by item (get vit bonus etc)
+ *------------------------------------------*/
+BUILDIN_FUNC(fullitemheal)
+{
+	TBL_PC *sd;
+	int hp,sp,ap;
+
+	hp=script_getnum(st,2);
+	sp=script_getnum(st,3);
+	ap=script_getnum(st,4);
+
+	if(potion_flag==1) {
+		potion_hp = hp;
+		potion_sp = sp;
+		potion_ap = ap;
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	if (!script_charid2sd(5,sd))
+		return SCRIPT_CMD_SUCCESS;
+
+	pc_itemheal(sd,sd->itemid,hp,sp,ap);
 	return SCRIPT_CMD_SUCCESS;
 }
 
@@ -8141,6 +8185,20 @@ BUILDIN_FUNC(makeitem) {
 		item_tmp.identify = 1;
 	else
 		item_tmp.identify = itemdb_isidentified(nameid);
+#ifdef Pandas_BattleConfig_Force_Identified
+		item_tmp.identify = (battle_config.force_identified & 32 ? 1 : item_tmp.identify);
+#endif // Pandas_BattleConfig_Force_Identified
+
+#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
+	if (next_dropitem_special.bound != -1) {
+		item_tmp.bound = cap_value(next_dropitem_special.bound, BOUND_NONE, BOUND_MAX - 1);
+		next_dropitem_special.bound = -1;
+	}
+	if (next_dropitem_special.rent_duration != 0) {
+		item_tmp.expire_time = (unsigned int)(time(NULL) + next_dropitem_special.rent_duration);
+		next_dropitem_special.rent_duration = 0;
+	}
+#endif // Pandas_ScriptCommand_Next_Dropitem_Special
 
 	map_addflooritem(&item_tmp, amount, m, x, y, 0, 0, 0, 4, 0, canShowEffect);
 	return SCRIPT_CMD_SUCCESS;
@@ -8219,12 +8277,26 @@ BUILDIN_FUNC(makeitem2) {
 		}
 
 		item_tmp.identify = iden;
+#ifdef Pandas_BattleConfig_Force_Identified
+		item_tmp.identify = (battle_config.force_identified & 32 ? 1 : item_tmp.identify);
+#endif // Pandas_BattleConfig_Force_Identified
 		item_tmp.refine = ref;
 		item_tmp.attribute = attr;
 		item_tmp.card[0] = script_getnum(st,10);
 		item_tmp.card[1] = script_getnum(st,11);
 		item_tmp.card[2] = script_getnum(st,12);
 		item_tmp.card[3] = script_getnum(st,13);
+
+#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
+		if (next_dropitem_special.bound != -1) {
+			item_tmp.bound = cap_value(next_dropitem_special.bound, BOUND_NONE, BOUND_MAX - 1);
+			next_dropitem_special.bound = -1;
+		}
+		if (next_dropitem_special.rent_duration != 0) {
+			item_tmp.expire_time = (unsigned int)(time(NULL) + next_dropitem_special.rent_duration);
+			next_dropitem_special.rent_duration = 0;
+		}
+#endif // Pandas_ScriptCommand_Next_Dropitem_Special
 
 		bool canShowEffect = false;
 
@@ -26962,6 +27034,22 @@ BUILDIN_FUNC(preg_match) {
 #endif
 }
 
+#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
+/* ===========================================================
+ * Command: next_dropitem_special
+ * Description: Special settings for the next item dropped on the ground
+ * Usage: next_dropitem_special <prop item binding type>,<rental duration>,<drop item color>;
+ * Return: Whether the command is successful or not, there will be no return value
+ * Author: Sola, Xiao Ke
+ * -----------------------------------------------------------*/
+BUILDIN_FUNC(next_dropitem_special) {
+	next_dropitem_special.bound = cap_value(script_getnum(st, 2), BOUND_NONE, BOUND_MAX - 1);
+	next_dropitem_special.rent_duration = cap_value(script_getnum(st, 3), 0, INT32_MAX);
+	next_dropitem_special.drop_effect = cap_value(script_getnum(st, 4), -1, DROPEFFECT_MAX - 1);
+	return SCRIPT_CMD_SUCCESS;
+}
+#endif // Pandas_ScriptCommand_Next_Dropitem_Special
+
 /// script command definitions
 /// for an explanation on args, see add_buildin_func
 struct script_function buildin_func[] = {
@@ -27027,6 +27115,8 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(healap,"i?"),
 	BUILDIN_DEF(itemheal,"ii?"),
 	BUILDIN_DEF(percentheal,"ii?"),
+	BUILDIN_DEF(fullheal,"iii?"),
+	BUILDIN_DEF(fullitemheal,"iii?"),
 	BUILDIN_DEF(rand,"i?"),
 	BUILDIN_DEF(countitem,"v?"),
 	BUILDIN_DEF(storagecountitem,"v?"),
@@ -27669,6 +27759,9 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(getfamerank, "?"),
 	BUILDIN_DEF(isdead, "?"),
 	BUILDIN_DEF(macro_detector, "?"),
+#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
+	BUILDIN_DEF(next_dropitem_special,"iii"),			// Special settings for the next item that falls on the ground [Sola, Xiaogram]
+#endif // Pandas_ScriptCommand_Next_Dropitem_Special
 
 #include "../custom/script_def.inc"
 
