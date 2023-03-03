@@ -2168,9 +2168,6 @@ int skill_additional_effect(struct block_list* src, struct block_list *bl, uint1
 	case ABC_UNLUCKY_RUSH:
 		sc_start(src, bl, SC_HANDICAPSTATE_MISFORTUNE, 30 + 10 * skill_lv, skill_lv, skill_get_time(skill_id, skill_lv));
 		break;
-	case TR_METALIC_FURY:
-		status_change_end(bl, SC_SOUNDBLEND);
-		break;
 	case EM_DIAMOND_STORM:
 		sc_start(src, bl, SC_HANDICAPSTATE_FROSTBITE, 40 + 10 * skill_lv, skill_lv, skill_get_time2(skill_id, skill_lv));
 		break;
@@ -3283,22 +3280,6 @@ int skill_mirage_cast(struct block_list* src, struct block_list* bl, int skill_i
 				map_foreachinrange(skill_area_sub, &itsu->unit->bl, skill_get_splash(skill_id, skill_lv), BL_CHAR,
 					src, skill_id, skill_lv, tick, BCT_ENEMY | SD_SPLASH | SD_ANIMATION | SKILL_ALTDMG_FLAG | 1, skill_castend_damage_id);
 				break;
-			case SS_KAGEGISSEN://damage splash
-				x = bl->x;
-				y = bl->y;
-				skill_area_temp[1] = 0;
-				clif_skill_nodamage(&itsu->unit->bl, bl, skill_id, skill_lv, tick);
-				if (battle_config.skill_eightpath_algorithm) {
-					//Use official AoE algorithm
-					map_foreachindir(skill_attack_area, itsu->unit->bl.m, itsu->unit->bl.x, itsu->unit->bl.y, x, y,
-						skill_get_splash(skill_id, skill_lv), skill_get_maxcount(skill_id, skill_lv), 0, splash_target(src),
-						skill_get_type(skill_id), src, src, skill_id, skill_lv, tick, SKILL_ALTDMG_FLAG, BCT_ENEMY);
-				} else {
-					map_foreachinpath(skill_attack_area, itsu->unit->bl.m, itsu->unit->bl.x, itsu->unit->bl.y, x, y,
-						skill_get_splash(skill_id, skill_lv), skill_get_maxcount(skill_id, skill_lv), splash_target(src),
-						skill_get_type(skill_id), src, src, skill_id, skill_lv, tick, SKILL_ALTDMG_FLAG, BCT_ENEMY);
-				}
-				break;
 			}
 		}
 	}
@@ -4196,10 +4177,6 @@ int64 skill_attack (int attack_type, struct block_list* src, struct block_list *
 			case SU_PICKYPECK:
 				if (status_get_lv(src) > 29 && rnd() % 100 < 10 * status_get_lv(src) / 30)
 					skill_addtimerskill(src, tick + dmg.amotion + skill_get_delay(skill_id, skill_lv), bl->id, 0, 0, skill_id, skill_lv, attack_type, flag|2);
-				break;
-			case ABC_DEFT_STAB:
-				if (skill_area_temp[1] == bl->id && rnd()%100 < 4 * skill_lv)// Need official autocast chance. [Rytech]
-					skill_addtimerskill(src, tick + dmg.amotion, bl->id, 0, 0, skill_id, skill_lv, BF_WEAPON, 2);
 				break;
 		}
 	}
@@ -5348,11 +5325,6 @@ int skill_castend_damage_id (struct block_list* src, struct block_list *bl, uint
 		if (sc && sc->getSCE(SC_INTENSIVE_AIM_COUNT))
 			status_change_end(src, SC_INTENSIVE_AIM_COUNT);
 		break;
-	case IG_SHIELD_SHOOTING:
-		clif_skill_nodamage(src, bl, skill_id, skill_lv, 1);
-		skill_attack(BF_WEAPON, src, src, bl, skill_id, skill_lv, tick, flag);
-		sc_start(src, src, SC_SHIELD_POWER, 100, skill_lv, skill_get_time(skill_id, skill_lv));
-		break;
 	case DK_DRAGONIC_AURA:
 	case DK_STORMSLASH:
 	case IG_GRAND_JUDGEMENT:
@@ -5481,10 +5453,6 @@ int skill_castend_damage_id (struct block_list* src, struct block_list *bl, uint
 
 		}
 		break;
-	
-	case SS_KAGEGISSEN:
-		skill_mirage_cast(src, bl,skill_id, skill_lv, 0, 0, tick,flag);
-		clif_skill_nodamage(src, bl, skill_id, skill_lv, 1);
 	case NC_FLAMELAUNCHER:
 		skill_area_temp[1] = bl->id;
 		if (battle_config.skill_eightpath_algorithm) {
@@ -5501,6 +5469,7 @@ int skill_castend_damage_id (struct block_list* src, struct block_list *bl, uint
 
 #ifndef RENEWAL
 	case SN_SHARPSHOOTING:
+	case SS_KAGEGISSEN:
 		flag |= 2; // Flag for specific mob damage formula
 #endif
 	case MA_SHARPSHOOTING:
@@ -5523,7 +5492,7 @@ int skill_castend_damage_id (struct block_list* src, struct block_list *bl, uint
 			   skill_get_splash(skill_id, skill_lv), skill_get_maxcount(skill_id, skill_lv), 0, splash_target(src),
 			   skill_get_type(skill_id), src, src, skill_id, skill_lv, tick, flag, BCT_ENEMY))) {
 #ifndef RENEWAL
-			   	if (skill_id == SN_SHARPSHOOTING)
+			   	if (skill_id == SN_SHARPSHOOTING || skill_id == SS_KAGEGISSEN)
 			   		flag &= ~2; // Only targets in the splash area are affected
 #endif
 
@@ -5809,6 +5778,7 @@ int skill_castend_damage_id (struct block_list* src, struct block_list *bl, uint
 	case EM_EL_STORM_WIND:
 	case EM_EL_AVALANCHE:
 	case EM_EL_DEADLY_POISON:
+	case SS_KAGEGISSEN:
 	case SKE_SUNSET_BLAST:
 	case SKE_NOON_BLAST:
 	case SOA_EXORCISM_OF_MALICIOUS_SOUL:
@@ -5820,6 +5790,8 @@ int skill_castend_damage_id (struct block_list* src, struct block_list *bl, uint
 	case BO_EXPLOSIVE_POWDER:
 	case BO_MAYHEMIC_THORNS:
 	case SS_KINRYUUHOU:
+	case SS_RAIDENPOU:
+	case SS_SEKIENHOU:
 	case HN_JUPITEL_THUNDER_STORM:
 		if( flag&1 ) {//Recursive invocation
 			int sflag = skill_area_temp[0] & 0xFFF;
@@ -5895,6 +5867,9 @@ int skill_castend_damage_id (struct block_list* src, struct block_list *bl, uint
 				case HN_JUPITEL_THUNDER_STORM:
 				case SKE_SUNSET_BLAST:
 				case SKE_NOON_BLAST:
+				case SS_KAGEGISSEN:
+				case SS_RAIDENPOU:
+				case SS_SEKIENHOU:
 					clif_skill_nodamage(src,bl,skill_id,skill_lv,1);
 					break;
 				case LG_MOONSLASHER:
@@ -6093,6 +6068,17 @@ int skill_castend_damage_id (struct block_list* src, struct block_list *bl, uint
 			clif_skill_nodamage(src, bl, skill_id, skill_lv, 1);
 			map_foreachinrange(skill_area_sub, bl, skill_get_splash(skill_id, skill_lv), BL_CHAR, src, skill_id, skill_lv, tick, flag | BCT_ENEMY | SD_SPLASH | 1, skill_castend_damage_id);
 			sc_start(src, src, SC_HNNOWEAPON, 100, skill_lv, skill_get_time2(skill_id, skill_lv));
+		}
+		break;
+	case IG_SHIELD_SHOOTING:
+		if (flag & 1) {
+			skill_attack(skill_get_type(skill_id), src, src, bl, skill_id, skill_lv, tick, skill_area_temp[0] & 0xFFF);
+		} else {
+			int splash = skill_get_splash(skill_id, skill_lv);
+			clif_skill_nodamage(src, bl, skill_id, skill_lv, 1);
+			skill_area_temp[0] = map_foreachinallrange(skill_area_sub, bl, splash, BL_CHAR, src, skill_id, skill_lv, tick, BCT_ENEMY, skill_area_sub_count);
+			map_foreachinrange(skill_area_sub, bl, splash, BL_CHAR, src, skill_id, skill_lv, tick, flag | BCT_ENEMY | SD_SPLASH | 1, skill_castend_damage_id);
+			sc_start(src, src, SC_SHIELD_POWER, 100, skill_lv, skill_get_time(skill_id, skill_lv));
 		}
 		break;
 	case NW_THE_VIGILANTE_AT_NIGHT:
@@ -8287,7 +8273,7 @@ int skill_castend_nodamage_id (struct block_list *src, struct block_list *bl, ui
 				if (skill_id == AG_DESTRUCTIVE_HURRICANE)
 					splash_size = 9; // 19x19
 				else if(skill_id == AG_CRYSTAL_IMPACT)
-					splash_size = 14; // 29x29 - Entire screen.
+					splash_size = 8; // 13x13
 			}
 
 			skill_area_temp[1] = 0;
@@ -15136,27 +15122,6 @@ int skill_castend_pos2(struct block_list* src, int x, int y, uint16 skill_id, ui
 		}
 	}
     	break;
-	case SS_RAIDENPOU:
-	case SS_SEKIENHOU:
-		skill_area_temp[1] = 0;
-		skill_mirage_cast(src, NULL,SS_ANTENPOU, skill_lv, x, y, tick, flag);
-		if( map_getcell(src->m, x, y, CELL_CHKLANDPROTECTOR) ) {
-			clif_skill_fail(sd,skill_id,USESKILL_FAIL,0);
-			return 0;
-		}
-		clif_skill_nodamage(src, src, skill_id, skill_lv, 1);
-		if (battle_config.skill_eightpath_algorithm) {
-			//Use official AoE algorithm
-			map_foreachindir(skill_attack_area, src->m, src->x, src->y, x, y,
-				skill_get_splash(skill_id, skill_lv), skill_get_maxcount(skill_id, skill_lv), 0, splash_target(src),
-				skill_get_type(skill_id), src, src, skill_id, skill_lv, tick, flag, BCT_ENEMY);
-		}
-		else {
-			map_foreachinpath(skill_attack_area, src->m, src->x, src->y, x, y,
-				skill_get_splash(skill_id, skill_lv), skill_get_maxcount(skill_id, skill_lv), splash_target(src),
-				skill_get_type(skill_id), src, src, skill_id, skill_lv, tick, flag, BCT_ENEMY);
-		}
-		break;
 	case SS_SHINKIROU:
 		flag |= 1;
 		clif_skill_nodamage(src, src, skill_id, skill_lv, 1);
@@ -21622,6 +21587,7 @@ int skill_delunitgroup_(std::shared_ptr<s_skill_unit_group> group, const char* f
 			case DC_SERVICEFORYOU:
 			case NC_NEUTRALBARRIER:
 			case NC_STEALTHFIELD:
+			case SS_KAGEGISSEN:
 				skill_usave_add(((TBL_PC*)src), group->skill_id, group->skill_lv);
 				break;
 		}

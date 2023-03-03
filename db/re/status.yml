@@ -5743,6 +5743,8 @@ Body:
       All: true    
     Flags:
       DisplayPc: true
+      NoDispell: true
+      NoClearance: true
   - Status: Kings_Grace
     Icon: EFST_KINGS_GRACE
     DurationLookup: LG_KINGS_GRACE
@@ -8976,6 +8978,9 @@ Body:
       Smatk: true
     EndOnStart:
       T_Fourth_God: true
+    Flags:
+      NoDispell: true
+      NoClearance: true
   - Status: Heaven_and_Earth
     Icon: EFST_HEAVEN_AND_EARTH
     DurationLookup: SOA_SOUL_OF_HEAVEN_AND_EARTH
