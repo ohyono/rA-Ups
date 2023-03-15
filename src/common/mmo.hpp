@@ -5,6 +5,9 @@
 #define MMO_HPP
 
 #include <time.h>
+#include <vector>
+#include <memory>
+#include <map>
 
 #include <config/core.hpp>
 
@@ -65,9 +68,9 @@
 * Max value tested was 265 */
 #ifndef MAX_CHARS
 	#if PACKETVER >= 20180124
-		#define MAX_CHARS 15
+		#define MAX_CHARS 30
 	#elif PACKETVER >= 20100413
-		#define MAX_CHARS 12
+		#define MAX_CHARS 30
 	#else
 		#define MAX_CHARS 9
 	#endif
@@ -89,11 +92,11 @@ typedef uint32 t_itemid;
 #endif
 #define MAX_FAME 1000000000 ///Max fame points
 #define MAX_CART 100 ///Maximum item in cart
-#define MAX_SKILL 1623 ///Maximum skill can be hold by Player, Homunculus, & Mercenary (skill list) AND skill_db limit
+#define MAX_SKILL 1800 ///Maximum skill can be hold by Player, Homunculus, & Mercenary (skill list) AND skill_db limit
 #define DEFAULT_WALK_SPEED 150 ///Default walk speed
 #define MIN_WALK_SPEED 20 ///Min walk speed
 #define MAX_WALK_SPEED 1000 ///Max walk speed
-#define MAX_STORAGE 600 ///Max number of storage slots a player can have
+#define MAX_STORAGE 800 ///Max number of storage slots a player can have
 #define MAX_GUILD_STORAGE 600 ///Max number of storage slots a guild
 #define MAX_PARTY 12 ///Max party member
 #define MAX_GUILD 16+10*6	///Increased max guild members +6 per 1 extension levels [Lupus]
@@ -270,6 +273,19 @@ enum e_mode {
 #define MD_MASK 0x000FFFF
 #define ATR_MASK 0x0FF0000
 #define CL_MASK 0xF000000
+
+struct s_aura_effect {
+	uint16 effect_id = 0;
+	uint32 replay_interval = 0;
+	int32 replay_tid = INVALID_TIMER;
+};
+
+struct s_unit_common_data {
+		struct s_ucd_aura {
+			uint32 id = 0;			// 该单位启用的光环编号
+			std::vector<std::shared_ptr<s_aura_effect>> effects;	// 该单位生效的特效组合
+		} aura;
+};
 
 // Questlog states
 enum e_quest_state : uint8 {

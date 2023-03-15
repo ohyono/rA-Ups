@@ -22,7 +22,7 @@ struct guardian_data;
 //#define AUTOLOOT_DISTANCE AREA_SIZE
 
 //The number of drops all mobs have and the max drop-slot that the steal skill will attempt to steal from.
-#define MAX_MOB_DROP 10
+#define MAX_MOB_DROP 42
 #define MAX_MVP_DROP 3
 #define MAX_MOB_DROP_ADD 5
 #define MAX_MVP_DROP_ADD 2
@@ -262,6 +262,7 @@ struct s_mob_db {
 	std::vector<e_race2> race2;	// celest
 	uint16 lv;
 	s_mob_drop dropitem[MAX_MOB_DROP_TOTAL], mvpitem[MAX_MVP_DROP_TOTAL];
+	std::vector<s_mob_drop> dropitem2;
 	status_data status;
 	view_data vd;
 	uint32 option;
@@ -383,6 +384,7 @@ struct mob_data {
 	uint16 damagetaken;
 
 	e_mob_bosstype get_bosstype();
+	struct s_unit_common_data ucd;
 };
 
 class MobAvailDatabase : public YamlDatabase {
@@ -414,6 +416,17 @@ public:
 	}
 
 	const std::string getDefaultLocation() override;
+	uint64 parseBodyNode(const ryml::NodeRef& node) override;
+};
+
+class MobDrop2Database : public YamlDatabase {
+public:
+	MobDrop2Database() : YamlDatabase("MOB_DROP2_DB", 1) {
+
+	}
+
+	void clear() { };
+	const std::string getDefaultLocation();
 	uint64 parseBodyNode(const ryml::NodeRef& node) override;
 };
 

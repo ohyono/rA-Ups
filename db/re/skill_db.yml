@@ -15984,7 +15984,27 @@ Body:
       ShowScale: true
       IgnoreLandProtector: true
     Hit: Multi_Hit
-    HitCount: 1
+    HitCount:
+      - Level: 1
+        Count: 1
+      - Level: 2
+        Count: 2
+      - Level: 3
+        Count: 3
+      - Level: 4
+        Count: 4
+      - Level: 5
+        Count: 5
+      - Level: 6
+        Count: 6
+      - Level: 7
+        Count: 7
+      - Level: 8
+        Count: 8
+      - Level: 9
+        Count: 9
+      - Level: 10
+        Count: 10
     SplashArea:
       - Level: 1
         Area: 5
@@ -17906,6 +17926,206 @@ Body:
         NoReiteration: true
         NoOverlap: true
     Status: PropertyWalk
+  - Id: 750
+    Name: NPC_EARTHQUAKE_K
+    Description: Earthquake
+    MaxLevel: 10
+    Type: Magic
+    TargetType: Self
+    DamageFlags:
+      Splash: true
+      SplashSplit: true
+      IgnoreDefense: true
+      IgnoreFlee: true
+    Flags:
+      IsNpc: true
+      TargetTrap: true
+      ShowScale: true
+      IgnoreLandProtector: true
+    Hit: Multi_Hit
+    HitCount:
+      - Level: 1
+        Count: 1
+      - Level: 2
+        Count: 2
+      - Level: 3
+        Count: 3
+      - Level: 4
+        Count: 4
+      - Level: 5
+        Count: 5
+      - Level: 6
+        Count: 6
+      - Level: 7
+        Count: 7
+      - Level: 8
+        Count: 8
+      - Level: 9
+        Count: 9
+      - Level: 10
+        Count: 10
+    SplashArea:
+      - Level: 1
+        Area: 5
+      - Level: 2
+        Area: 7
+      - Level: 3
+        Area: 9
+      - Level: 4
+        Area: 11
+      - Level: 5
+        Area: 13
+      - Level: 6
+        Area: 5
+      - Level: 7
+        Area: 7
+      - Level: 8
+        Area: 9
+      - Level: 9
+        Area: 11
+      - Level: 10
+        Area: 13
+    Duration1: 910
+    FixedCastTime: -1
+    Unit:
+      Id: Earthquake
+      Range:
+        - Level: 1
+          Size: 5
+        - Level: 2
+          Size: 7
+        - Level: 3
+          Size: 9
+        - Level: 4
+          Size: 11
+        - Level: 5
+          Size: 13
+        - Level: 6
+          Size: 5
+        - Level: 7
+          Size: 7
+        - Level: 8
+          Size: 9
+        - Level: 9
+          Size: 11
+        - Level: 10
+          Size: 13
+      Interval: 300
+      Target: Enemy
+      Flag:
+        PathCheck: true
+  - Id: 747
+    Name: NPC_LEASH
+    Description: Leash
+    MaxLevel: 5
+    TargetType: Attack
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsNpc: true
+    Range:
+      - Level: 1
+        Size: 5
+      - Level: 2
+        Size: 10
+      - Level: 3
+        Size: 15
+      - Level: 4
+        Size: 20
+      - Level: 5
+        Size: 25
+    Hit: Single
+    HitCount: 1
+  - Id: 748
+    Name: NPC_WIDELEASH
+    Description: Wide Leash
+    MaxLevel: 5
+    TargetType: Attack
+    DamageFlags:
+      NoDamage: true
+      Splash: true
+    Flags:
+      IsNpc: true
+    Range:
+      - Level: 1
+        Size: 5
+      - Level: 2
+        Size: 10
+      - Level: 3
+        Size: 15
+      - Level: 4
+        Size: 20
+      - Level: 5
+        Size: 25
+    Hit: Single
+    HitCount: 1
+    SplashArea: -1
+  - Id: 751
+    Name: NPC_ALL_STAT_DOWN
+    Description: Decrease All Stats
+    MaxLevel: 5
+    TargetType: Attack
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsNpc: true
+    Range: 9
+    Duration1: 10000
+    Status: ALL_STAT_DOWN
+  - Id: 752
+    Name: NPC_GRADUAL_GRAVITY
+    Description: Increased Gravity
+    MaxLevel: 3
+    TargetType: Attack
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsNpc: true
+    Range: 9
+    Duration1: 3000
+    Status: GRADUAL_GRAVITY
+  - Id: 753  
+    Name: NPC_DAMAGE_HEAL
+    Description: Damage Heal
+    MaxLevel: 3
+    TargetType: Self
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsNpc: true
+    Duration1: 30000
+    Status: DAMAGE_HEAL
+  - Id: 754
+    Name: NPC_IMMUNE_PROPERTY
+    Description: Property Immune
+    MaxLevel: 10 #Official max level is 5.
+    TargetType: Support
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsNpc: true
+    Range:
+      - Level: 1
+        Size: 5
+      - Level: 2
+        Size: 10
+      - Level: 3
+        Size: 15
+      - Level: 4
+        Size: 20
+      - Level: 5
+        Size: 25
+    Duration1: 30000
+  - Id: 755
+    Name: NPC_MOVE_COORDINATE
+    Description: Change Location
+    MaxLevel: 1
+    TargetType: Attack
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsNpc: true
+    Range: 14
   - Id: 756
     Name: NPC_WIDEBLEEDING2
     Description: Wide Bleeding
@@ -18163,6 +18383,261 @@ Body:
     SplashArea: 14
     Duration2: 18000
     Status: Curse
+  - Id: 769
+    Name: NPC_RAINOFMETEOR
+    Description: Rain of Meteor
+    MaxLevel: 10
+    Type: Magic
+    TargetType: Ground
+    Range: 9
+    Flags:
+      IsNpc: true
+    Hit: Multi_Hit
+    HitCount:
+      - Level: 1
+        Count: 2
+      - Level: 2
+        Count: 3
+      - Level: 3
+        Count: 3
+      - Level: 4
+        Count: 4
+      - Level: 5
+        Count: 4
+      - Level: 6
+        Count: 5
+      - Level: 7
+        Count: 5
+      - Level: 8
+        Count: 6
+      - Level: 9
+        Count: 6
+      - Level: 10
+        Count: 7
+    Element: Fire
+    SplashArea:
+      - Level: 1
+        Area: 3
+      - Level: 2
+        Area: 3
+      - Level: 3
+        Area: 5
+      - Level: 4
+        Area: 5
+      - Level: 5
+        Area: 7
+      - Level: 6
+        Area: 7
+      - Level: 7
+        Area: 9
+      - Level: 8
+        Area: 9
+      - Level: 9
+        Area: 11
+      - Level: 10
+        Area: 11
+    Duration1:
+      - Level: 1
+        Time: 800
+      - Level: 2
+        Time: 900
+      - Level: 3
+        Time: 1000
+      - Level: 4
+        Time: 1100
+      - Level: 5
+        Time: 1200
+      - Level: 6
+        Time: 1300
+      - Level: 7
+        Time: 1400
+      - Level: 8
+        Time: 1500
+      - Level: 9
+        Time: 1600
+      - Level: 10
+        Time: 1700
+    Unit:
+      Id: Dummyskill
+      Range: 3
+      Interval: 160
+      Target: Enemy
+      Flag:
+        PathCheck: true
+  - Id: 770
+    Name: NPC_GROUNDDRIVE
+    Description: Ground Drive
+    MaxLevel: 5
+    Type: Magic
+    TargetType: Ground
+    Flags:
+      IsNpc: true
+      ShowScale: true
+    Range: 9
+    Hit: Multi_Hit
+    HitCount: 5
+    Element: Earth
+    Duration1: 100
+    Unit:
+      Id: Dummyskill
+      Layout: 2
+      Interval: 1000
+      Target: Enemy
+      Flag:
+        PathCheck: true
+  - Id: 771
+    Name: NPC_RELIEVE_ON
+    Description: NPC_RELIEVE_ON
+    MaxLevel: 1
+    TargetType: Self
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsNpc: true
+    HitCount: 1
+    Duration1: -1
+    Status: Relieve_On    
+  - Id: 772
+    Name: NPC_RELIEVE_OFF
+    Description: NPC_RELIEVE_OFF
+    MaxLevel: 1
+    TargetType: Self
+    DamageFlags:
+      NoDamage: true
+    Flags:
+      IsNpc: true
+    HitCount: 1
+    Duration1: 60000
+    Status: Relieve_Off
+  - Id: 773
+    Name: NPC_LOCKON_LASER
+    Description: Lockon Laser
+    MaxLevel: 5
+    Type: Magic
+    TargetType: Attack
+    DamageFlags:
+      Splash: true
+      IgnoreFlee: true
+    Flags:
+      IsNpc: true
+    Range: 9
+    Hit: Single
+    HitCount: 1
+    Element: Neutral
+    SplashArea: 3
+    Duration1: 60000
+    FixedCastTime: -1
+    Status: Lockon_Laser
+  - Id: 774
+    Name: NPC_LOCKON_LASER_ATK
+    Description: Lockon Laser ATK
+    MaxLevel: 5
+    Type: Magic
+    TargetType: Attack
+    DamageFlags:
+      Splash: true
+      IgnoreDefense: true
+      IgnoreDefCard: true
+    Flags:
+      IsNpc: true
+    Range: 9
+    Hit: Single
+    HitCount: 1
+    Element: Neutral
+    SplashArea: 3
+  - Id: 777
+    Name: NPC_RANDOMBREAK
+    Description: Random Break
+    MaxLevel: 10
+    Type: Weapon
+    TargetType: Attack
+    Flags:
+      IsNpc: true
+    Range: -2
+    Hit: Single
+    HitCount: 1
+    Element: Weapon
+  - Id: 778
+    Name: NPC_STRIP_SHADOW
+    Description: Strip Shadow
+    MaxLevel: 5
+    Type: Weapon
+    TargetType: Attack
+    DamageFlags:
+      NoDamage: true
+    Range: 1
+    Hit: Single
+    Flags:
+      IsNpc: true
+      ShowScale: true
+    Status: Shadow_Strip
+  - Id: 779
+    Name: NPC_DEADLYCURSE2
+    Description: Deadly Curse
+    MaxLevel: 5
+    TargetType: Self
+    DamageFlags:
+      NoDamage: true
+      Splash: true
+    Flags:
+      IsNpc: true
+    Hit: Single
+    HitCount: 1
+    SplashArea:
+      - Level: 1
+        Area: 5
+      - Level: 2
+        Area: 10
+      - Level: 3
+        Area: 15
+      - Level: 4
+        Area: 20
+      - Level: 5
+        Area: 25
+    Duration2: 30000
+    Status: Deadly_Defeasance
+  - Id: 780
+    Name: NPC_CANE_OF_EVIL_EYE
+    Description: Cane of Evil Eye
+    MaxLevel: 5
+    Type: Magic
+    TargetType: Ground
+    Flags:
+      IsNpc: true
+    Range: 9
+    Hit: Multi_Hit
+    HitCount: 5
+    Element: Neutral
+    CastTime: 4000
+    AfterCastActDelay: 1000
+    Duration1: 15000
+    Cooldown: 4000
+    FixedCastTime: 1500
+    Unit:
+      Id: Cane_of_Evil_Eye
+      Range: 6
+      Interval: 1150
+      Target: Enemy
+      Flag:
+        NoOverlap: true
+        PathCheck: true
+  - Id: 783
+    Name: NPC_KILLING_AURA
+    Description: Killing Aura
+    MaxLevel: 5 #TODO unknown interactions with level
+    Type: Misc
+    TargetType: Support
+    Hit: Single
+    HitCount: 1
+    DamageFlags:
+      IgnoreFlee: true
+      IgnoreDefCard: true
+      Splash: true
+    Flags:
+      IsNpc: true
+    SplashArea: 5
+    Duration1: 30000
+    Status: Killing_Aura
   - Id: 1001
     Name: KN_CHARGEATK
     Description: Charge Attack

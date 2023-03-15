@@ -144,7 +144,7 @@ class map_session_data;
 struct eri;
 
 extern int potion_flag; //For use on Alchemist improved potions/Potion Pitcher. [Skotlex]
-extern int potion_hp, potion_per_hp, potion_sp, potion_per_sp;
+extern int potion_hp, potion_per_hp, potion_sp, potion_per_sp, potion_ap, potion_per_ap;
 extern int potion_target;
 extern unsigned int *generic_ui_array;
 extern unsigned int generic_ui_array_size;
@@ -496,6 +496,7 @@ enum unitdata_mobtypes {
 	UMOB_RES,
 	UMOB_MRES,
 	UMOB_DAMAGETAKEN,
+	UMOB_AURA,
 };
 
 enum unitdata_homuntypes {
@@ -540,6 +541,7 @@ enum unitdata_homuntypes {
 	UHOM_DMOTION,
 	UHOM_TARGETID,
 	UHOM_GROUP_ID,
+	UHOM_AURA,
 };
 
 enum unitdata_pettypes {
@@ -581,6 +583,7 @@ enum unitdata_pettypes {
 	UPET_ADELAY,
 	UPET_DMOTION,
 	UPET_GROUP_ID,
+	UPET_AURA,
 };
 
 enum unitdata_merctypes {
@@ -622,6 +625,7 @@ enum unitdata_merctypes {
 	UMER_DMOTION,
 	UMER_TARGETID,
 	UMER_GROUP_ID,
+	UMER_AURA,
 };
 
 enum unitdata_elemtypes {
@@ -665,6 +669,7 @@ enum unitdata_elemtypes {
 	UELE_DMOTION,
 	UELE_TARGETID,
 	UELE_GROUP_ID,
+	UELE_AURA,
 };
 
 enum unitdata_npctypes {
@@ -714,6 +719,7 @@ enum unitdata_npctypes {
 	UNPC_BODY2,
 	UNPC_DEADSIT,
 	UNPC_GROUP_ID,
+	UNPC_AURA,
 };
 
 enum navigation_service {
@@ -1897,7 +1903,7 @@ enum e_special_effects {
 	EF_SOUL_REAPER,
 
 	EF_SOUL_EXPLOSION = 1242,
-	EF_MAX
+	EF_MAX = 9999
 };
 
 enum e_hat_effects : int16{
@@ -2081,6 +2087,7 @@ enum e_hat_effects : int16{
 	HAT_EF_SUBJECT_AURA_NAVY,
 	HAT_EF_20TH_SCARF_J,
 	HAT_EF_GHOST_FIRE,
+	HAT_EF_SERPENT_SHADOW,
 	HAT_EF_MAX
 };
 

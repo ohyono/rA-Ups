@@ -51,6 +51,14 @@
 #define MAP_ECLAGE "eclage"
 #define MAP_ECLAGE_IN "ecl_in01"
 #define MAP_LASAGNA "lasagna"
+#define MAP_ROCKRIDGE "harboro1"
+#define MAP_SPCOR "sp_cor"
+#define MAP_MAISON "ba_maison"
+#define MAP_WOLFVILL "wolfvill"
+#define MAP_ICECASTLE "icecastle"
+#define MAP_MARKET "vend_zone"
+#define MAP_DUMMIES "tra_fild"
+#define MAP_QUEST "quest_area"
 
 const char* mapindex_getmapname(const char* string, char* output);
 const char* mapindex_getmapname_ext(const char* string, char* output);

@@ -1257,6 +1257,25 @@ enum sc_type : int16 {
 	SC_PORK_RIB_STEW,
 
 	SC_WEAPONBREAKER,
+	
+	SC_RELIEVE_ON,
+	SC_RELIEVE_OFF,
+	SC_LOCKON_LASER,
+	SC_KILLING_AURA,	
+	SC_ALL_STAT_DOWN,
+	SC_GRADUAL_GRAVITY,
+	SC_DAMAGE_HEAL,
+	SC_IMMUNE_PROPERTY,
+	SC_IMMUNE_PROPERTY_NOTHING,
+	SC_IMMUNE_PROPERTY_WATER,
+	SC_IMMUNE_PROPERTY_GROUND,
+	SC_IMMUNE_PROPERTY_FIRE,
+	SC_IMMUNE_PROPERTY_WIND,
+	SC_IMMUNE_PROPERTY_POISON,
+	SC_IMMUNE_PROPERTY_SAINT,
+	SC_IMMUNE_PROPERTY_DARKNESS,
+	SC_IMMUNE_PROPERTY_TELEKINESIS,
+	SC_IMMUNE_PROPERTY_UNDEAD,
 
 	// 2021 Mutated Homunculus Skills
 	SC_TOXIN_OF_MANDARA,
@@ -3450,6 +3469,10 @@ struct view_data *status_get_viewdata(struct block_list *bl);
 void status_set_viewdata(struct block_list *bl, int class_);
 void status_change_init(struct block_list *bl);
 status_change *status_get_sc(struct block_list *bl);
+
+struct s_unit_common_data *status_get_ucd(struct block_list* bl);
+bool status_ishiding(struct block_list* bl, struct block_list* observer_bl = nullptr);
+bool status_isinvisible(struct block_list* bl);
 
 int status_isdead(struct block_list *bl);
 int status_isimmune(struct block_list *bl);

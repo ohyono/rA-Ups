@@ -6473,6 +6473,8 @@ static unsigned short status_calc_str(struct block_list *bl, status_change *sc, 
 		str += sc->getSCE(SC_ALMIGHTY)->val1;
 	if (sc->getSCE(SC_ULTIMATECOOK))
 		str += sc->getSCE(SC_ULTIMATECOOK)->val1;
+	if (sc->getSCE(SC_ALL_STAT_DOWN))
+		str -= sc->getSCE(SC_ALL_STAT_DOWN)->val2;
 
 	return (unsigned short)cap_value(str,0,USHRT_MAX);
 }
@@ -6557,6 +6559,8 @@ static unsigned short status_calc_agi(struct block_list *bl, status_change *sc, 
 		agi += sc->getSCE(SC_ALMIGHTY)->val1;
 	if (sc->getSCE(SC_ULTIMATECOOK))
 		agi += sc->getSCE(SC_ULTIMATECOOK)->val1;
+	if (sc->getSCE(SC_ALL_STAT_DOWN))
+		agi -= sc->getSCE(SC_ALL_STAT_DOWN)->val2;
 
 	return (unsigned short)cap_value(agi,0,USHRT_MAX);
 }
@@ -6633,6 +6637,8 @@ static unsigned short status_calc_vit(struct block_list *bl, status_change *sc, 
 		vit += sc->getSCE(SC_ULTIMATECOOK)->val1;
 	if (sc->getSCE(SC_CUP_OF_BOZA))
 		vit += 10;
+	if (sc->getSCE(SC_ALL_STAT_DOWN))
+		vit -= sc->getSCE(SC_ALL_STAT_DOWN)->val2;
 
 	return (unsigned short)cap_value(vit,0,USHRT_MAX);
 }
@@ -6722,6 +6728,8 @@ static unsigned short status_calc_int(struct block_list *bl, status_change *sc, 
 		int_ += sc->getSCE(SC_ALMIGHTY)->val1;
 	if (sc->getSCE(SC_ULTIMATECOOK))
 		int_ += sc->getSCE(SC_ULTIMATECOOK)->val1;
+	if (sc->getSCE(SC_ALL_STAT_DOWN))
+		int_ -= sc->getSCE(SC_ALL_STAT_DOWN)->val2;
 
 	return (unsigned short)cap_value(int_,0,USHRT_MAX);
 }
@@ -6808,6 +6816,8 @@ static unsigned short status_calc_dex(struct block_list *bl, status_change *sc, 
 		dex += sc->getSCE(SC_ALMIGHTY)->val1;
 	if (sc->getSCE(SC_ULTIMATECOOK))
 		dex += sc->getSCE(SC_ULTIMATECOOK)->val1;
+	if (sc->getSCE(SC_ALL_STAT_DOWN))
+		dex -= sc->getSCE(SC_ALL_STAT_DOWN)->val2;
 
 	return (unsigned short)cap_value(dex,0,USHRT_MAX);
 }
@@ -6882,6 +6892,8 @@ static unsigned short status_calc_luk(struct block_list *bl, status_change *sc, 
 		luk += sc->getSCE(SC_ULTIMATECOOK)->val1;
 	if (sc->getSCE(SC_MYSTICPOWDER))
 		luk += 10;
+	if (sc->getSCE(SC_ALL_STAT_DOWN))
+		luk -= sc->getSCE(SC_ALL_STAT_DOWN)->val2;
 
 	return (unsigned short)cap_value(luk,0,USHRT_MAX);
 }
@@ -9448,6 +9460,70 @@ status_change *status_get_sc(struct block_list *bl)
 	return NULL;
 }
 
+struct s_unit_common_data *status_get_ucd(struct block_list* bl)
+{
+	if( bl )
+	switch (bl->type) {
+		case BL_PC:  return &((TBL_PC*)bl)->ucd;
+		case BL_MOB: return &((TBL_MOB*)bl)->ucd;
+		case BL_NPC: return &((TBL_NPC*)bl)->ucd;
+		case BL_HOM: return &((TBL_HOM*)bl)->ucd;
+		case BL_MER: return &((TBL_MER*)bl)->ucd;
+		case BL_PET: return &((TBL_PET*)bl)->ucd;
+		case BL_ELEM: return &((TBL_ELEM*)bl)->ucd;
+	}
+	return NULL;
+}
+
+//************************************
+// Method:      status_ishiding
+// Description: 与 pc_ishiding 类似, 可以判断一个单位是否隐藏
+// Access:      public 
+// Parameter:   struct block_list * bl
+//				该参数用于指定需要判断哪个 bl 单位的是否处于隐藏状态
+// Parameter:   struct block_list * observer_bl
+//				观察者的 bl 指针 (默认为 nullptr 表示没有观察者, 无需考虑 cloak 影响)
+//				通常情况下一个如果被检测的 bl 单位是一个 npc,
+//				那么可能会因为这个 npc 已经在某个 observer_bl 的视野中被隐藏/显示 (cloakonnpc/cloakoffnpc)
+//				因此想判断一个目标 bl 单位的是否处于隐藏状态的时候, 把 observer_bl 带上判断就会代入观察者视野
+// Returns:     bool
+// Author:      Sola丶小克(CairoLee)  2021/12/29 22:52
+//************************************ 
+bool status_ishiding(struct block_list* bl, struct block_list* observer_bl) {
+	if (!bl) return false;
+	status_change* sc = status_get_sc(bl);
+	if (!sc) return false;
+
+	int option = sc->option;
+
+#ifdef Pandas_Fix_Cloak_Status_Baffling
+	if (observer_bl && observer_bl->type == BL_PC && bl->type == BL_NPC && !sc->cloak_reverting) {
+		map_session_data* sd = BL_CAST(BL_PC, observer_bl);
+
+		if (std::find(sd->cloaked_npc.begin(), sd->cloaked_npc.end(), bl->id) != sd->cloaked_npc.end()) {
+			option ^= OPTION_CLOAK;
+		}
+	}
+#endif // Pandas_Fix_Cloak_Status_Baffling
+
+	return (option & (OPTION_HIDE | OPTION_CLOAK | OPTION_CHASEWALK)) != 0;
+}
+
+//************************************
+// Method:      status_isinvisible
+// Description: 与 pc_isinvisible 类似, 可以判断一个单位是否处于不可见状态
+// Access:      public 
+// Parameter:   struct block_list * bl
+// Returns:     bool
+// Author:      Sola丶小克(CairoLee)  2020/10/11 17:53
+//************************************
+bool status_isinvisible(struct block_list* bl) {
+	if (!bl) return false;
+	status_change* sc = status_get_sc(bl);
+	if (!sc) return false;
+	return (sc->option & OPTION_INVISIBLE) != 0;
+}
+
 /**
  * Initiate (memset) the status change data of an object
  * @param bl: Object whose sc data to memset [PC|MOB|HOM|MER|ELEM|NPC]
@@ -9475,6 +9551,8 @@ static int status_get_sc_interval(enum sc_type type)
 		case SC_LEECHESEND:
 		case SC_DPOISON:
 		case SC_DEATHHURT:
+		case SC_GRADUAL_GRAVITY:
+		case SC_KILLING_AURA:
 		case SC_HANDICAPSTATE_DEADLYPOISON:
 			return 1000;
 		case SC_HANDICAPSTATE_CONFLAGRATION:
@@ -10963,6 +11041,7 @@ int status_change_start(struct block_list* src, struct block_list* bl,enum sc_ty
 		case SC_POISON:
 		case SC_BLEEDING:
 		case SC_BURNING:
+		case SC_KILLING_AURA:
 		case SC_HANDICAPSTATE_CONFLAGRATION:
 		case SC_HANDICAPSTATE_DEADLYPOISON:
 		case SC_HANDICAPSTATE_DEPRESSION:
@@ -11024,6 +11103,17 @@ int status_change_start(struct block_list* src, struct block_list* bl,enum sc_ty
 			if( (val4 = tick/(val2 * 1000)) < 1 )
 				val4 = 1;
 			tick_time = val2 * 1000; // [GodLesZ] tick time
+			break;
+		case SC_GRADUAL_GRAVITY:
+			val2 = 10 * val1;
+			tick_time = status_get_sc_interval(type);
+			val4 = tick - tick_time; // Remaining time
+			break;
+		case SC_ALL_STAT_DOWN:
+			val2 = 20 * val1;
+			if( val1 < skill_get_max( NPC_ALL_STAT_DOWN ) ){
+				val2 -= 10;
+			}
 			break;
 		case SC_BOSSMAPINFO:
 			if( sd != NULL ) {
@@ -12341,6 +12431,10 @@ int status_change_start(struct block_list* src, struct block_list* bl,enum sc_ty
 		case SC_H_MINE:
 			val2 = src->id;
 			break;
+		case SC_LOCKON_LASER:
+			val4 = tick / 3000;
+			tick_time = 3000; // Sends every 3 seconds custom
+			break;	
 		case SC_HEAT_BARREL:
 			{
 				uint8 n = 10;
@@ -12590,6 +12684,9 @@ int status_change_start(struct block_list* src, struct block_list* bl,enum sc_ty
 			if (tick_time < 500)
 				tick_time = 500; // Avoid being brought down to 0.
 			val4 = tick - tick_time; // Remaining Time
+			break;
+		case SC_RELIEVE_ON:
+			val2 = min(10*val1, 99); // % damage received reduced from 10 * skill lvl up to 99%
 			break;
 		case SC_VIGOR: {
 				uint8 hp_loss[10] = { 100, 90, 80, 70, 60, 50, 40, 30, 20, 10 };
@@ -14174,7 +14271,11 @@ TIMER_FUNC(status_change_timer){
 			return 0;
 		}
 		break;
-
+	case SC_GRADUAL_GRAVITY:
+		if (sce->val4 >= 0) {
+			status_zap(bl, status->max_hp * sce->val2 / 100, 0);
+		}
+		break;		
 	case SC_BOSSMAPINFO:
 		if( sd && --(sce->val4) >= 0 ) {
 			struct mob_data *boss_md = map_id2boss(sce->val1);
@@ -14894,6 +14995,17 @@ TIMER_FUNC(status_change_timer){
 			return 0;
 		}
 		break;
+	case SC_LOCKON_LASER:
+		if (--(sce->val4) >= 0) {
+			map_freeblock_lock();
+			//clif_specialeffect(bl, 1633, AREA);
+			if (sc->getSCE(type)) {
+				sc_timer_next(1000 + tick);
+			}
+			map_freeblock_unlock();
+			return 0;
+		}
+		break;	
 	case SC_BURNT:
 		if( --(sce->val4) >= 0 ) {
 			int damage = 2000;
@@ -14968,6 +15080,10 @@ TIMER_FUNC(status_change_timer){
 			sc_timer_next(3000 + tick);
 			return 0;
 		}
+		break;
+	case SC_KILLING_AURA:
+		if (sce->val4 >= 0)
+			skill_castend_damage_id( bl, bl, NPC_KILLING_AURA, sce->val1, tick, 0 );
 		break;
 	}
 

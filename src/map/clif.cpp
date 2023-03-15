@@ -59,10 +59,6 @@
 #include "unit.hpp"
 #include "vending.hpp"
 
-#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
-s_next_dropitem_special next_dropitem_special;
-#endif // Pandas_ScriptCommand_Next_Dropitem_Special
-
 using namespace rathena;
 
 static inline uint32 client_tick( t_tick tick ){
@@ -928,13 +924,11 @@ void clif_dropflooritem( struct flooritem_data* fitem, bool canShowEffect ){
 		p.dropeffectmode = DROPEFFECT_NONE;
 	}
 
-#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
 	if (next_dropitem_special.drop_effect != -1) {
 		p.showdropeffect = 1;
 		p.dropeffectmode = next_dropitem_special.drop_effect - 1;
 		next_dropitem_special.drop_effect = -1;
 	}
-#endif // Pandas_ScriptCommand_Next_Dropitem_Special
 
 #endif
 	clif_send( &p, sizeof(p), &fitem->bl, AREA );
@@ -1019,7 +1013,13 @@ static TIMER_FUNC(clif_clearunit_delayed_sub){
 void clif_clearunit_delayed(struct block_list* bl, clr_type type, t_tick tick)
 {
 	struct block_list *tbl = ers_alloc(delay_clearunit_ers, struct block_list);
-	memcpy (tbl, bl, sizeof (struct block_list));
+	tbl->next = nullptr;
+	tbl->prev = nullptr;
+	tbl->id = bl->id;
+	tbl->m = bl->m;
+	tbl->x = bl->x;
+	tbl->y = bl->y;
+	tbl->type = BL_NUL;
 	add_timer(tick, clif_clearunit_delayed_sub, (int)type, (intptr_t)tbl);
 }
 
@@ -3436,7 +3436,7 @@ void clif_parse_guild_castle_teleport_request(int fd, map_session_data* sd){
 			break;
 	}
 
-	if (zeny && pc_payzeny(sd, zeny, LOG_TYPE_OTHER, nullptr)) {
+	if (zeny && pc_payzeny(sd, zeny, LOG_TYPE_OTHER)) {
 		clif_guild_castle_teleport_res(*sd, SIEGE_TP_NOT_ENOUGH_ZENY);
 		return;
 	}
@@ -11180,6 +11180,9 @@ void clif_parse_LoadEndAck(int fd,map_session_data *sd)
 			channel_mjoin(sd); //join new map
 
 		clif_pk_mode_message(sd);
+		
+		// Update the client
+		clif_goldpc_info( *sd );
 	}
 	
 	if( sd->guild && ( battle_config.guild_notice_changemap == 2 || guild_notice ) ){
@@ -17016,7 +17019,7 @@ void clif_parse_Auction_register(int fd, map_session_data *sd)
 		pc_delitem(sd, sd->auction.index, sd->auction.amount, 1, 6, LOG_TYPE_AUCTION);
 		sd->auction.amount = 0;
 
-		pc_payzeny(sd, zeny, LOG_TYPE_AUCTION, NULL);
+		pc_payzeny(sd, zeny, LOG_TYPE_AUCTION);
 	}
 }
 
@@ -17056,7 +17059,7 @@ void clif_parse_Auction_bid(int fd, map_session_data *sd){
 	else if ( CheckForCharServer() ) // char server is down (bugreport:1138)
 		clif_Auction_message(fd, 0); // You have failed to bid into the auction
 	else {
-		pc_payzeny(sd, bid, LOG_TYPE_AUCTION, NULL);
+		pc_payzeny(sd, bid, LOG_TYPE_AUCTION);
 		intif_Auction_bid(sd->status.char_id, sd->status.name, auction_id, bid);
 	}
 }
@@ -22423,7 +22426,7 @@ void clif_parse_refineui_refine( int fd, map_session_data* sd ){
 	}
 
 	// Try to pay for the refine
-	if( pc_payzeny( sd, cost->zeny, LOG_TYPE_CONSUME, NULL ) ){
+	if( pc_payzeny( sd, cost->zeny, LOG_TYPE_CONSUME ) ){
 		clif_npc_buy_result( sd, e_purchase_result::PURCHASE_FAIL_MONEY ); // "You do not have enough zeny."
 		return;
 	}
@@ -22587,7 +22590,7 @@ bool clif_parse_stylist_buy_sub( map_session_data* sd, _look look, int16 index )
 		return false;
 	}
 
-	if( costs->price > 0 && pc_payzeny( sd, costs->price, LOG_TYPE_OTHER, nullptr ) != 0 ){
+	if( costs->price > 0 && pc_payzeny( sd, costs->price, LOG_TYPE_OTHER ) != 0 ){
 		return false;
 	}
 
@@ -23841,7 +23844,7 @@ void clif_parse_enchantgrade_start( int fd, map_session_data* sd ){
 		}
 	}
 
-	if( pc_payzeny( sd, option->zeny, LOG_TYPE_ENCHANTGRADE, nullptr ) > 0 ){
+	if( pc_payzeny( sd, option->zeny, LOG_TYPE_ENCHANTGRADE ) > 0 ){
 		return;
 	}
 
@@ -24287,7 +24290,7 @@ void clif_parse_enchantwindow_general( int fd, map_session_data* sd ){
 		materials[idx] = entry.second;
 	}
 
-	if( pc_payzeny( sd, enchant_slot->normal.zeny, LOG_TYPE_ENCHANT, nullptr ) != 0 ){
+	if( pc_payzeny( sd, enchant_slot->normal.zeny, LOG_TYPE_ENCHANT ) != 0 ){
 		return;
 	}
 
@@ -24414,7 +24417,7 @@ void clif_parse_enchantwindow_perfect( int fd, map_session_data* sd ){
 		materials[idx] = entry.second;
 	}
 
-	if( pc_payzeny( sd, perfect_enchant->zeny, LOG_TYPE_ENCHANT, nullptr ) != 0 ){
+	if( pc_payzeny( sd, perfect_enchant->zeny, LOG_TYPE_ENCHANT ) != 0 ){
 		return;
 	}
 
@@ -24511,7 +24514,7 @@ void clif_parse_enchantwindow_upgrade( int fd, map_session_data* sd ){
 		materials[idx] = entry.second;
 	}
 
-	if( pc_payzeny( sd, upgrade->zeny, LOG_TYPE_ENCHANT, nullptr ) != 0 ){
+	if( pc_payzeny( sd, upgrade->zeny, LOG_TYPE_ENCHANT ) != 0 ){
 		return;
 	}
 
@@ -24616,7 +24619,7 @@ void clif_parse_enchantwindow_reset( int fd, map_session_data* sd ){
 		materials[idx] = entry.second;
 	}
 
-	if( pc_payzeny( sd, enchant->reset.zeny, LOG_TYPE_ENCHANT, nullptr ) != 0 ){
+	if( pc_payzeny( sd, enchant->reset.zeny, LOG_TYPE_ENCHANT ) != 0 ){
 		return;
 	}
 
@@ -25148,6 +25151,70 @@ void clif_parse_partybooking_reply( int fd, map_session_data* sd ){
 #endif
 }
 
+void clif_goldpc_info( map_session_data& sd ){
+#if PACKETVER_MAIN_NUM >= 20140508 || PACKETVER_RE_NUM >= 20140508 || defined(PACKETVER_ZERO)
+	const static int32 client_max_seconds = 3600;
+
+	if( battle_config.feature_goldpc_active ){
+		struct PACKET_ZC_GOLDPCCAFE_POINT p = {};
+
+		p.packetType = HEADER_ZC_GOLDPCCAFE_POINT;
+		p.active = map_getmapflag(sd.bl.m, MF_BATTLEGROUND) ? false:true;
+		if( battle_config.feature_goldpc_vip && pc_isvip( &sd ) ){
+			p.unitPoint = 2;
+		}else{
+			p.unitPoint = 1;
+		}
+		p.point = (int32)pc_readparam( &sd, SP_GOLDPC_POINTS );
+		if( sd.goldpc_tid != INVALID_TIMER ){
+			const struct TimerData* td = get_timer( sd.goldpc_tid );
+
+			if( td != nullptr ){
+				// Get the remaining milliseconds until the next reward
+				t_tick remaining = td->tick - gettick();
+
+				// Always round up to full second
+				remaining += ( remaining % 1000 );
+
+				p.accumulatePlaySecond = (int32)( client_max_seconds - ( remaining / 1000 ) );
+			}else{
+				p.accumulatePlaySecond = 0;
+			}
+		}else{
+			p.accumulatePlaySecond = client_max_seconds;
+		}
+
+		clif_send( &p, sizeof( p ), &sd.bl, SELF );
+	}
+#endif
+}
+
+void clif_parse_dynamic_npc( int fd, map_session_data* sd ){
+#if PACKETVER_MAIN_NUM >= 20140430 || PACKETVER_RE_NUM >= 20140430 || defined(PACKETVER_ZERO)
+	struct PACKET_CZ_DYNAMICNPC_CREATE_REQUEST* p = (struct PACKET_CZ_DYNAMICNPC_CREATE_REQUEST*)RFIFOP( fd, 0 );
+
+	char npcname[NPC_NAME_LENGTH + 1];
+
+	if( strncasecmp( "GOLDPCCAFE", p->nickname, sizeof( p->nickname ) ) == 0 ){
+		safestrncpy( npcname, p->nickname, sizeof( npcname ) );
+	}else{
+		return;
+	}
+
+	struct npc_data* nd = npc_name2id( npcname );
+
+	if( nd == nullptr ){
+		ShowError( "clif_parse_dynamic_npc: Original NPC \"%s\" was not found.\n", npcname );
+		clif_dynamicnpc_result( *sd, DYNAMICNPC_RESULT_UNKNOWNNPC );
+		return;
+	}
+
+	if( npc_duplicate_npc_for_player( *nd, *sd ) != nullptr ){
+		clif_dynamicnpc_result( *sd, DYNAMICNPC_RESULT_SUCCESS );
+	}
+#endif
+}
+
 /*==========================================
  * Main client packet processing function
  *------------------------------------------*/
@@ -25380,6 +25447,63 @@ void do_init_clif(void) {
 #endif
 
 	delay_clearunit_ers = ers_new(sizeof(struct block_list),"clif.cpp::delay_clearunit_ers",ERS_OPT_CLEAR);
+}
+
+//************************************
+// Method:      clif_send_auras_single
+// Description: 将 bl 的光环效果信息发送给 tsd 的客户端
+// Access:      public 
+// Parameter:   struct block_list * bl
+// Parameter:   map_session_data * dsd
+// Returns:     void
+// Author:      Sola丶小克(CairoLee)  2020/09/26 16:38
+//************************************
+void clif_send_auras_single(struct block_list* bl, map_session_data* tsd) {
+	if (!bl || !tsd || bl->m == -1) return;
+
+	struct s_unit_common_data* ucd = status_get_ucd(bl);
+	if (!ucd) return;
+	if (aura_need_hiding(bl, &tsd->bl)) return;
+
+#ifdef Pandas_MapFlag_NoAura
+	if (map_getmapflag(bl->m, MF_NOAURA)) return;
+#endif // Pandas_MapFlag_NoAura
+
+	for (auto it : ucd->aura.effects) {
+		if (it->replay_tid != INVALID_TIMER) continue;
+		clif_specialeffect_single(bl, it->effect_id, tsd->fd);
+	}
+}
+
+//************************************
+// Method:      clif_send_auras
+// Description: 将 sd 的光环信息发送给指定范围的其他客户端
+// Access:      public 
+// Parameter:   struct block_list * bl
+// Parameter:   enum send_target target
+// Parameter:   bool ignore_when_hidden 若角色处于隐藏状态则不发送光环信息
+// Parameter:   enum e_aura_special flag 指定仅发送某些特殊效果
+// Returns:     void
+// Author:      Sola丶小克(CairoLee)  2020/10/11 11:49
+//************************************
+void clif_send_auras(struct block_list* bl, enum send_target target, bool ignore_when_hidden, enum e_aura_special flag) {
+	if (!bl || bl->m == -1) return;
+
+#ifdef Pandas_MapFlag_NoAura
+	if (map_getmapflag(bl->m, MF_NOAURA)) return;
+#endif // Pandas_MapFlag_NoAura
+
+	if (aura_need_hiding(bl) && ignore_when_hidden)
+		return;
+
+	struct s_unit_common_data* ucd = status_get_ucd(bl);
+	if (!ucd) return;
+
+	for (auto it : ucd->aura.effects) {
+		if (it->replay_tid != INVALID_TIMER) continue;
+		if (flag != AURA_SPECIAL_NOTHING && (aura_special(it->effect_id) & flag) != flag) continue;
+		clif_specialeffect(bl, it->effect_id, target);
+	}
 }
 
 void do_final_clif(void) {

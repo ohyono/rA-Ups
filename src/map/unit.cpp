@@ -2958,6 +2958,11 @@ void unit_dataset(struct block_list *bl)
 	ud->attackabletime =
 	ud->canact_tick    =
 	ud->canmove_tick   = gettick();
+
+	struct s_unit_common_data* ucd = status_get_ucd(bl);
+	if (ucd) {
+		memset(ucd, 0, sizeof(struct s_unit_common_data));
+	}
 }
 
 /**

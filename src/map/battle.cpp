@@ -529,13 +529,13 @@ int64 battle_attr_fix(struct block_list *src, struct block_list *target, int64 d
 #else
 					damage += (int64)(damage * 400 / 100);
 #endif
+				}
 				if ( tsc->getSCE(SC_CLIMAX_BLOOM))
 #ifdef RENEWAL
 					ratio += 100;
 #else
 					damage += (int64)(damage * 100 / 100);
 #endif
-				}
 				break;
 			case ELE_HOLY:
 				if (tsc->getSCE(SC_ORATIO))
@@ -826,7 +826,6 @@ int battle_calc_cardfix(int attack_type, struct block_list *src, struct block_li
 								)
 								ele_fix += 30;
 						}
-
 						for (const auto &it : sd->right_weapon.addele2) {
 							if (it.ele != ELE_ALL && it.ele != tstatus->def_ele)
 								continue;
@@ -838,7 +837,6 @@ int battle_calc_cardfix(int attack_type, struct block_list *src, struct block_li
 						}
 						cardfix = cardfix * (100 + ele_fix) / 100;
 					}
-
 					for (const auto &raceit : t_race2)
 						cardfix = cardfix * (100 + sd->right_weapon.addrace2[raceit]) / 100;
 					cardfix = cardfix * (100 + sd->right_weapon.addclass[tstatus->class_] + sd->right_weapon.addclass[CLASS_ALL]
@@ -862,6 +860,15 @@ int battle_calc_cardfix(int attack_type, struct block_list *src, struct block_li
 									(tstatus->def_ele == ELE_WIND && sd->spiritcharm_type == ELE_EARTH)
 									)
 									ele_fix_lh += 30;
+							}
+							for (const auto &it : sd->left_weapon.addele2) {
+								if (it.ele != ELE_ALL && it.ele != tstatus->def_ele)
+									continue;
+								if (!(((it.flag)&flag)&BF_WEAPONMASK &&
+									((it.flag)&flag)&BF_RANGEMASK &&
+									((it.flag)&flag)&BF_SKILLMASK))
+									continue;
+								ele_fix_lh += it.rate;
 							}
 							cardfix_ = cardfix_ * (100 + ele_fix_lh) / 100;
 						}
@@ -1148,6 +1155,7 @@ bool battle_status_block_damage(struct block_list *src, struct block_list *targe
 
 	// SC Types that must be first because they may or may not block damage
 	if ((sce = sc->getSCE(SC_KYRIE)) && damage > 0 && ((flag & BF_WEAPON) || skill_id == TF_THROWSTONE)) {
+		sce->val2 -= static_cast<int>(cap_value(damage, INT_MIN, INT_MAX));
 		if (sce->val2 >= 0)
 			damage = 0;
 		else
@@ -1373,7 +1381,7 @@ bool battle_status_block_damage(struct block_list *src, struct block_list *targe
 		return false;
 	}
 
-	if (sc->getSCE(SC_DODGE) && (flag&BF_LONG || sc->getSCE(SC_SPURT)) && (skill_id != NPC_EARTHQUAKE || (skill_id == NPC_EARTHQUAKE && flag & NPC_EARTHQUAKE_FLAG)) && rnd() % 100 < 20) {
+	if (sc->getSCE(SC_DODGE) && (flag&BF_LONG || sc->getSCE(SC_SPURT)) && ((skill_id != NPC_EARTHQUAKE || (skill_id == NPC_EARTHQUAKE && flag & NPC_EARTHQUAKE_FLAG)) || (skill_id != NPC_EARTHQUAKE_K || (skill_id == NPC_EARTHQUAKE_K && flag & NPC_EARTHQUAKE_FLAG))) && rnd() % 100 < 20) {
 		map_session_data *sd = map_id2sd(target->id);
 
 		if (sd && pc_issit(sd))
@@ -1383,7 +1391,7 @@ bool battle_status_block_damage(struct block_list *src, struct block_list *targe
 		return false;
 	}
 
-	if ((sce = sc->getSCE(SC_KAUPE)) && (skill_id != NPC_EARTHQUAKE || (skill_id == NPC_EARTHQUAKE && flag & NPC_EARTHQUAKE_FLAG)) && rnd() % 100 < sce->val2) { //Kaupe blocks damage (skill or otherwise) from players, mobs, homuns, mercenaries.
+	if ((sce = sc->getSCE(SC_KAUPE)) && ((skill_id != NPC_EARTHQUAKE || (skill_id == NPC_EARTHQUAKE && flag & NPC_EARTHQUAKE_FLAG)) || (skill_id != NPC_EARTHQUAKE_K || (skill_id == NPC_EARTHQUAKE_K && flag & NPC_EARTHQUAKE_FLAG))) && rnd() % 100 < sce->val2) { //Kaupe blocks damage (skill or otherwise) from players, mobs, homuns, mercenaries.
 		clif_specialeffect(target, EF_STORMKICK4, AREA);
 		//Shouldn't end until Breaker's non-weapon part connects.
 #ifndef RENEWAL
@@ -1414,14 +1422,14 @@ bool battle_status_block_damage(struct block_list *src, struct block_list *targe
 			status_change_end(target, SC_BUNSINJYUTSU);
 		return false;
 	}
-	
+
 	//TODO: What's causing this status?
 	if (sc->getSCE(SC_HANDICAPSTATE_HOLYFLAME) && flag&BF_MAGIC)	{ 
 		int heal = (int)cap_value(damage/2, INT_MIN, INT_MAX);
 		clif_skill_nodamage(0, target, AL_HEAL,heal, 1);
 		status_heal(target,heal,0,0,0);
 	}
-
+	
 	return true;
 }
 
@@ -1460,13 +1468,13 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 	if (bl->type == BL_PC) {
 		sd=(map_session_data *)bl;
 		//Special no damage states
+		if(flag&BF_WEAPON && sd->special_state.no_weapon_damage)
+			damage -= damage * sd->special_state.no_weapon_damage / 100;
+
 		if(flag&BF_MAGIC && sd->special_state.no_magic_damage) {
 			if (sc && !sc->getSCE(SC_DEADLY_DEFEASANCE)) //put it here because in in pc_calc_sub with CalcFlag All it'll break setunitdata of monsters, with CalcFlag Base it'll break other sc's bonuses [datawulf]
 				damage -= damage * sd->special_state.no_magic_damage / 100;
 		}
-
-		if(flag&BF_MAGIC && sd->special_state.no_magic_damage)
-			damage -= damage * sd->special_state.no_magic_damage / 100;
 
 		if(flag&BF_MISC && sd->special_state.no_misc_damage)
 			damage -= damage * sd->special_state.no_misc_damage / 100;
@@ -1475,22 +1483,58 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 			return 0;
 	}
 
-	sc = status_get_sc(bl); //check target status
-
 	if( sc && sc->getSCE(SC_INVINCIBLE) && !sc->getSCE(SC_INVINCIBLEOFF) )
 		return 1;
 
+	if (sc) {
+		if (sc->getSCE(SC_IMMUNE_PROPERTY)) {
+			int element = skill_get_ele(skill_id, skill_lv);
+			if (!skill_id || element == ELE_WEAPON) {
+				element = status_get_status_data(src)->rhw.ele | status_get_status_data(src)->lhw.ele;
+				if (tsd && tsd->state.arrow_atk && tsd->bonus.arrow_ele)
+					element = tsd->bonus.arrow_ele;
+				if (tsd && tsd->spiritcharm_type != CHARM_TYPE_NONE && tsd->spiritcharm >= MAX_SPIRITCHARM)
+					element = tsd->spiritcharm_type;
+			} else if (element == ELE_ENDOWED) //Use enchantment's element
+				element = status_get_attack_sc_element(src, status_get_sc(src));
+			else if (element == ELE_RANDOM) //Use random element
+				element = rnd() % ELE_ALL;
+
+			if ((sc->getSCE(SC_IMMUNE_PROPERTY_NOTHING) && element == ELE_NEUTRAL)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_WATER) && element == ELE_WATER)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_GROUND) && element == ELE_EARTH)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_FIRE) && element == ELE_FIRE)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_WIND) && element == ELE_WIND)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_DARKNESS) && element == ELE_DARK)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_SAINT) && element == ELE_HOLY)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_POISON) && element == ELE_POISON)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_TELEKINESIS) && element == ELE_GHOST)
+			|| (sc->getSCE(SC_IMMUNE_PROPERTY_UNDEAD) && element == ELE_UNDEAD)) {
+				damage = 0;
+			}
+		}
+
+		if (sc->getSCE(SC_DAMAGE_HEAL)) {
+			int dmg_heal_lv = sc->getSCE(SC_DAMAGE_HEAL)->val1;
+			if (damage > 0 && ((flag & BF_WEAPON && dmg_heal_lv == 1) || (flag & BF_MAGIC && dmg_heal_lv == 2) || (flag & BF_MISC && dmg_heal_lv == 3))) {//Absorb MISC damage or WEAPON & MAGIC damage on level 3?
+				clif_skill_nodamage(NULL, bl, AL_HEAL, (int)damage, 1);
+				status_heal(bl, damage, 0, 0);
+				damage = 0;
+			}
+		}
+	}
+	
 	switch (skill_id) {
 #ifndef RENEWAL
 		case PA_PRESSURE:
 		case HW_GRAVITATION:
+		case NPC_LOCKON_LASER:
 #endif
 		case SP_SOULEXPLOSION:
 			// Adjust these based on any possible PK damage rates.
 			if (battle_config.pk_mode == 1 && map_getmapflag(bl->m, MF_PVP) > 0)
 				damage = battle_calc_pk_damage(*src, *bl, damage, skill_id, flag);
-
-			return damage; //These skills bypass everything else.
+			return damage; //These skills bypass everything else.		
 	}
 
 	// Nothing can reduce the damage, but Safety Wall and Millennium Shield can block it completely.
@@ -1907,6 +1951,15 @@ int64 battle_calc_damage(struct block_list *src,struct block_list *bl,struct Dam
 
 	if (sd && pc_ismadogear(sd)) {
 		pc_overheat(*sd, (battle_get_weapon_element(d, src, bl, skill_id, skill_lv, EQI_HAND_R, false) == ELE_FIRE ? 3 : 1));
+	}
+	
+	// Target status (again), required for RELIEVE
+	sc = status_get_sc(bl);
+
+	// !TODO: Should RELIEVE needed to be down here or after some other check? Should the skill be independent of damagetaken from mob_db.yml?
+	if (sc && sc->count) {
+		if ((sce = sc->getSCE(SC_RELIEVE_ON)) && !sc->getSCE(SC_RELIEVE_OFF))
+			damage = i64max((damage - damage * sce->val2 / 100), 1);
 	}
 
 	if (bl->type == BL_MOB) { // Reduces damage received for Green Aura MVP
@@ -3132,6 +3185,7 @@ static bool is_attack_hitting(struct Damage* wd, struct block_list *src, struct 
 			case NPC_UNDEADATTACK:
 			case NPC_CHANGEUNDEAD:
 			case NPC_EARTHQUAKE:
+			case NPC_EARTHQUAKE_K:
 			case NPC_POISON:
 			case NPC_BLINDATTACK:
 			case NPC_SILENCEATTACK:
@@ -5083,6 +5137,9 @@ static int battle_calc_attack_skill_ratio(struct Damage* wd, struct block_list *
 		case EL_ROCK_CRUSHER:
 			skillratio += 700;
 			break;
+		case NPC_LOCKON_LASER:
+			skillratio = 0;
+			break;	
 		case KO_HAPPOKUNAI:
 			skillratio += -100 + 50 * skill_lv;
 			if (sc && sc->getSCE(SC_KAGEMUSYA))
@@ -6981,9 +7038,9 @@ static struct Damage battle_calc_weapon_attack(struct block_list *src, struct bl
 		battle_attack_sc_bonus(&wd, src, target, skill_id, skill_lv);
 
 		if (sd) { //monsters, homuns and pets have their damage computed directly
-			wd.damage = (int64)floor((float)((wd.statusAtk + wd.weaponAtk + wd.equipAtk + wd.percentAtk) * (100 + sstatus->patk) / 100 + wd.masteryAtk + bonus_damage));
+			wd.damage = (int64)floor((float)(((wd.statusAtk + wd.weaponAtk + wd.equipAtk + wd.percentAtk)*1.5) * (100 + sstatus->patk) / 100 + wd.masteryAtk + bonus_damage));
 			if (is_attack_left_handed(src, skill_id))
-				wd.damage2 = (int64)floor((float)((wd.statusAtk2 + wd.weaponAtk2 + wd.equipAtk2 + wd.percentAtk2) * (100 + sstatus->patk) / 100 + wd.masteryAtk2 + bonus_damage));
+				wd.damage2 = (int64)floor((float)(((wd.statusAtk2 + wd.weaponAtk2 + wd.equipAtk2 + wd.percentAtk2)*1.5) * (100 + sstatus->patk) / 100 + wd.masteryAtk2 + bonus_damage));
 
 			// CritAtkRate modifier
 			if (wd.type == DMG_CRITICAL || wd.type == DMG_MULTI_HIT_CRITICAL) {
@@ -7326,6 +7383,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 			}
 			break;
 		case NPC_EARTHQUAKE:
+		case NPC_EARTHQUAKE_K:
 			s_ele = ELE_NEUTRAL;
 			break;
 		case WL_HELLINFERNO:
@@ -7494,6 +7552,7 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 				ad.damage = status_get_lv(src) * 10 + sstatus->int_;
 				break;
 			case NPC_EARTHQUAKE:
+			case NPC_EARTHQUAKE_K:
 				if (mflag & NPC_EARTHQUAKE_FLAG) {
 					ad.flag |= NPC_EARTHQUAKE_FLAG; // Pass flag to battle_calc_damage
 					mflag &= ~NPC_EARTHQUAKE_FLAG; // Remove before NK_SPLASHSPLIT check
@@ -7685,11 +7744,17 @@ struct Damage battle_calc_magic_attack(struct block_list *src,struct block_list 
 						skillratio += 100 * skill_lv;
 						break;
 #ifdef RENEWAL
+					case NPC_GROUNDDRIVE:
+						skillratio += 100 * skill_lv;
+						break;
 					case WZ_HEAVENDRIVE:
 						skillratio += 25;
 						break;
 					case WZ_METEOR:
 						skillratio += 25;
+						break;
+					case NPC_RAINOFMETEOR:
+						skillratio += 25;	// unknown ratio
 						break;
 					case WZ_VERMILION:
 						if(sd)
@@ -8613,6 +8678,15 @@ struct Damage battle_calc_misc_attack(struct block_list *src,struct block_list *
 			md.damage = 50;
 			md.flag |= BF_WEAPON;
 			break;
+		case NPC_LOCKON_LASER_ATK:
+			md.damage = 30000;
+			break;
+		case NPC_KILLING_AURA:
+			md.damage = 10000;
+			break;
+		case NPC_CANE_OF_EVIL_EYE:
+			md.damage = 75000;
+			break;
 #ifdef RENEWAL
 		case HT_LANDMINE:
 		case MA_LANDMINE:
@@ -8909,7 +8983,7 @@ struct Damage battle_calc_misc_attack(struct block_list *src,struct block_list *
 			if (sd) {
 				if (md.damage > sd->status.zeny)
 					md.damage = sd->status.zeny;
-				pc_payzeny(sd,(int)cap_value(md.damage, INT_MIN, INT_MAX),LOG_TYPE_STEAL,NULL);
+				pc_payzeny(sd,(int)cap_value(md.damage, INT_MIN, INT_MAX),LOG_TYPE_STEAL);
 			}
 			break;
 	}
@@ -10970,6 +11044,11 @@ static const struct _battle_data {
 	{ "mob_respawn_time",                   &battle_config.mob_respawn_time,                1000,   1000,   INT_MAX,        },
 
 	{ "feature.stylist",                    &battle_config.feature_stylist,                 1,      0,      1,              },
+	
+	{ "feature.goldpc_active",              &battle_config.feature_goldpc_active,           1,      0,      1,              },
+	{ "feature.goldpc_time",                &battle_config.feature_goldpc_time,          3600,      0,   3600,              },
+	{ "feature.goldpc_max_points",          &battle_config.feature_goldpc_max_points,     300,      0,    300,              },
+	{ "feature.goldpc_vip",                 &battle_config.feature_goldpc_vip,              1,      0,      1,              },
 
 #include "../custom/battle_config_init.inc"
 };

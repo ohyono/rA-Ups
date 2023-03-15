@@ -2160,6 +2160,38 @@ bool pc_set_hate_mob(map_session_data *sd, int pos, struct block_list *bl)
 	return true;
 }
 
+TIMER_FUNC(pc_goldpc_update){
+	map_session_data* sd = map_id2sd( id );
+
+	if( sd == nullptr ){
+		return 0;
+	}
+
+	sd->goldpc_tid = INVALID_TIMER;
+
+	// Check if feature is still active
+	if( !battle_config.feature_goldpc_active ){
+		return 0;
+	}
+
+	// TODO: add mapflag to disable?
+
+	int64 points = pc_readparam( sd, SP_GOLDPC_POINTS );
+
+	if( battle_config.feature_goldpc_vip && pc_isvip( sd ) ){
+		points += 2;
+	}else{
+		points += 1;
+	}
+
+	// Reset the seconds
+	pc_setreg2( sd, GOLDPC_SECONDS_VAR, 0 );
+	// Update the points and trigger a new timer if necessary
+	pc_setparam( sd, SP_GOLDPC_POINTS, points );
+
+	return 0;
+}
+
 /*==========================================
  * Invoked once after the char/account/account2 registry variables are received. [Skotlex]
  * We didn't receive item information at this point so DO NOT attempt to do item operations here.
@@ -2267,7 +2299,16 @@ void pc_reg_received(map_session_data *sd)
 	// Before those clients you could send out the instance info even when the client was still loading the map, afterwards you need to send it later
 	clif_instance_info( *sd );
 #endif
-
+	
+	if( battle_config.feature_goldpc_active && pc_readreg2( sd, GOLDPC_POINT_VAR ) < battle_config.feature_goldpc_max_points && !sd->state.autotrade ){
+		sd->goldpc_tid = add_timer( gettick() + ( battle_config.feature_goldpc_time - pc_readreg2( sd, GOLDPC_SECONDS_VAR ) ) * 1000, pc_goldpc_update, sd->bl.id, (intptr_t)nullptr );
+#ifndef VIP_ENABLE
+		clif_goldpc_info( *sd );
+#endif
+	}else{
+		sd->goldpc_tid = INVALID_TIMER;
+	}
+	
 	// pet
 	if (sd->status.pet_id > 0)
 		intif_request_petdata(sd->status.account_id, sd->status.char_id, sd->status.pet_id);
@@ -5572,10 +5613,10 @@ uint8 pc_inventoryblank(map_session_data *sd)
  * @param sd: Player
  * @param zeny: Zeny removed
  * @param type: Log type
- * @param tsd: (optional) From who to log (if null take sd)
+ * @param log_charid: (optional) From who to log (if not needed, use 0)
  * @return 0: Success, 1: Failed (Removing negative Zeny or not enough Zeny), 2: Player not found
  */
-char pc_payzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, map_session_data *tsd)
+char pc_payzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, uint32 log_charid)
 {
 	nullpo_retr(2,sd);
 
@@ -5592,8 +5633,7 @@ char pc_payzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, map_s
 	sd->status.zeny -= zeny;
 	clif_updatestatus(sd,SP_ZENY);
 
-	if(!tsd) tsd = sd;
-	log_zeny(sd, type, tsd, -zeny);
+	log_zeny(*sd, type, log_charid, -zeny);
 	if( zeny > 0 && sd->state.showzeny ) {
 		char output[255];
 		sprintf(output, "Removed %dz.", zeny);
@@ -5607,10 +5647,10 @@ char pc_payzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, map_s
  * Attempts to give zeny to player
  * @param sd: Player
  * @param type: Log type
- * @param tsd: (optional) From who to log (if null take sd)
+ * @param log_charid: (optional) From who to log (if not needed, use 0)
  * @return -1: Player not found, 0: Success, 1: Giving negative Zeny
  */
-char pc_getzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, map_session_data *tsd)
+char pc_getzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, uint32 log_charid)
 {
 	nullpo_retr(-1,sd);
 
@@ -5627,8 +5667,7 @@ char pc_getzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, map_s
 	sd->status.zeny += zeny;
 	clif_updatestatus(sd,SP_ZENY);
 
-	if(!tsd) tsd = sd;
-	log_zeny(sd, type, tsd, zeny);
+	log_zeny(*sd, type, log_charid, zeny);
 	if( zeny > 0 && sd->state.showzeny ) {
 		char output[255];
 		sprintf(output, "Gained %dz.", zeny);
@@ -6656,7 +6695,7 @@ int pc_steal_coin(map_session_data *sd,struct block_list *target)
 		// Zeny Steal Amount: (rnd() % (10 * target_lv + 1 - 8 * target_lv)) + 8 * target_lv
 		int amount = (rnd() % (2 * target_lv + 1)) + 8 * target_lv; // Reduced formula
 
-		pc_getzeny(sd, amount, LOG_TYPE_STEAL, NULL);
+		pc_getzeny(sd, amount, LOG_TYPE_STEAL);
 		md->state.steal_coin_flag = 1;
 		return 1;
 	}
@@ -9767,7 +9806,7 @@ int pc_dead(map_session_data *sd,struct block_list *src)
 		if( zeny_penalty > 0 && !mapdata->flag[MF_NOZENYPENALTY]) {
 			zeny_penalty = (uint32)( sd->status.zeny * ( zeny_penalty / 10000. ) );
 			if(zeny_penalty)
-				pc_payzeny(sd, zeny_penalty, LOG_TYPE_PICKDROP_PLAYER, NULL);
+				pc_payzeny(sd, zeny_penalty, LOG_TYPE_PICKDROP_PLAYER);
 		}
 	}
 
@@ -10099,6 +10138,7 @@ int64 pc_readparam(map_session_data* sd,int64 type)
 #endif
 		case SP_CRIT_DEF_RATE: val = sd->bonus.crit_def_rate; break;
 		case SP_ADD_ITEM_SPHEAL_RATE: val = sd->bonus.itemsphealrate2; break;
+		case SP_GOLDPC_POINTS: val = pc_readreg2( sd, GOLDPC_POINT_VAR ); break;
 		default:
 			ShowError("pc_readparam: Attempt to read unknown parameter '%lld'.\n", type);
 			return -1;
@@ -10162,7 +10202,7 @@ bool pc_setparam(map_session_data *sd,int64 type,int64 val_tmp)
 	case SP_ZENY:
 		if( val < 0 )
 			return false;// can't set negative zeny
-		log_zeny(sd, LOG_TYPE_SCRIPT, sd, -(sd->status.zeny - cap_value(val, 0, MAX_ZENY)));
+		log_zeny(*sd, LOG_TYPE_SCRIPT, sd->status.char_id, -(sd->status.zeny - cap_value(val, 0, MAX_ZENY)));
 		sd->status.zeny = cap_value(val, 0, MAX_ZENY);
 		break;
 	case SP_BASEEXP:
@@ -10301,7 +10341,7 @@ bool pc_setparam(map_session_data *sd,int64 type,int64 val_tmp)
 	case SP_BANK_VAULT:
 		if (val < 0)
 			return false;
-		log_zeny(sd, LOG_TYPE_BANK, sd, -(sd->bank_vault - cap_value(val, 0, MAX_BANK_ZENY)));
+		log_zeny(*sd, LOG_TYPE_BANK, sd->status.char_id, -(sd->bank_vault - cap_value(val, 0, MAX_BANK_ZENY)));
 		sd->bank_vault = cap_value(val, 0, MAX_BANK_ZENY);
 		pc_setreg2(sd, BANK_VAULT_VAR, sd->bank_vault);
 		return true;
@@ -10350,6 +10390,28 @@ bool pc_setparam(map_session_data *sd,int64 type,int64 val_tmp)
 		sd->cook_mastery = val;
 		pc_setglobalreg(sd, add_str(COOKMASTERY_VAR), sd->cook_mastery);
 		return true;
+	case SP_GOLDPC_POINTS:
+		val = cap_value( val, 0, battle_config.feature_goldpc_max_points );
+
+		pc_setreg2( sd, GOLDPC_POINT_VAR, val );
+
+		// If you do not check this, some funny things happen (circle logics, timer mismatches, etc...)
+		if( !sd->state.connect_new ){
+			// Make sure to always delete the timer
+			if( sd->goldpc_tid != INVALID_TIMER ){
+				delete_timer( sd->goldpc_tid, pc_goldpc_update );
+				sd->goldpc_tid = INVALID_TIMER;
+			}
+
+			// If the system is enabled and the player can still earn some points restart the timer
+			if( battle_config.feature_goldpc_active && val < battle_config.feature_goldpc_max_points && !sd->state.autotrade ){
+				sd->goldpc_tid = add_timer( gettick() + ( battle_config.feature_goldpc_time - pc_readreg2( sd, GOLDPC_SECONDS_VAR ) ) * 1000, pc_goldpc_update, sd->bl.id, (intptr_t)nullptr );
+			}
+
+			// Update the client
+			clif_goldpc_info( *sd );
+		}
+		return true;
 	default:
 		ShowError("pc_setparam: Attempted to set unknown parameter '%lld'.\n", type);
 		return false;
@@ -10394,7 +10456,7 @@ void pc_heal(map_session_data *sd,unsigned int hp,unsigned int sp, unsigned int 
  * @param sp: SP to heal
  * @return Amount healed to an object
  */
-int pc_itemheal(map_session_data *sd, t_itemid itemid, int hp, int sp)
+int pc_itemheal(struct map_session_data *sd, t_itemid itemid, int hp, int sp, int ap)
 {
 	int bonus, tmp, penalty = 0;
 
@@ -10456,6 +10518,13 @@ int pc_itemheal(map_session_data *sd, t_itemid itemid, int hp, int sp)
 		if (bonus != 100 && tmp > sp)
 			sp = tmp;
 	}
+	if (ap) {
+		bonus = 100;// No bonuses yet. Set to 100% rate for now.
+
+		tmp = ap * bonus / 100; // Overflow check
+		if (bonus != 100 && tmp > ap)
+			ap = tmp;
+	}
 	if (sd->sc.count) {
 		// Critical Wound and Death Hurt stack
 		if (sd->sc.getSCE(SC_CRITICALWOUND))
@@ -10493,7 +10562,7 @@ int pc_itemheal(map_session_data *sd, t_itemid itemid, int hp, int sp)
 			hp = 0;
 	}
 
-	return status_heal(&sd->bl, hp, sp, 1);
+	return status_heal(&sd->bl, hp, sp, ap, 1);
 }
 
 /*==========================================
@@ -14526,15 +14595,18 @@ void pc_expire_check(map_session_data *sd) {
 * @param money Amount of money to deposit
 **/
 enum e_BANKING_DEPOSIT_ACK pc_bank_deposit(map_session_data *sd, int money) {
+/**		if (!sd->state.banking) {
+		return BDA_ERROR;
+	}
+**/
 	unsigned int limit_check = money + sd->bank_vault;
-
 	if( money <= 0 || limit_check > MAX_BANK_ZENY ) {
 		return BDA_OVERFLOW;
 	} else if ( money > sd->status.zeny ) {
 		return BDA_NO_MONEY;
 	}
 
-	if( pc_payzeny(sd,money, LOG_TYPE_BANK, NULL) )
+	if( pc_payzeny(sd, money, LOG_TYPE_BANK) )
 		return BDA_NO_MONEY;
 
 	sd->bank_vault += money;
@@ -14550,8 +14622,11 @@ enum e_BANKING_DEPOSIT_ACK pc_bank_deposit(map_session_data *sd, int money) {
 * @param money Amount of money that will be withdrawn
 **/
 enum e_BANKING_WITHDRAW_ACK pc_bank_withdraw(map_session_data *sd, int money) {
-	unsigned int limit_check = money + sd->status.zeny;
-	
+/**	if (!sd->state.banking) {
+		return BWA_UNKNOWN_ERROR;
+	}
+**/	
+	unsigned int limit_check = money + sd->status.zeny;	
 	if( money <= 0 ) {
 		return BWA_UNKNOWN_ERROR;
 	} else if ( money > sd->bank_vault ) {
@@ -14562,7 +14637,7 @@ enum e_BANKING_WITHDRAW_ACK pc_bank_withdraw(map_session_data *sd, int money) {
 		return BWA_UNKNOWN_ERROR;
 	}
 	
-	if( pc_getzeny(sd,money, LOG_TYPE_BANK, NULL) )
+	if( pc_getzeny(sd,money, LOG_TYPE_BANK) )
 		return BWA_NO_MONEY;
 	
 	sd->bank_vault -= money;
@@ -15741,6 +15816,7 @@ void do_init_pc(void) {
 	add_timer_func_list(pc_autotrade_timer, "pc_autotrade_timer");
 	add_timer_func_list(pc_on_expire_active, "pc_on_expire_active");
 	add_timer_func_list(pc_macro_detector_timeout, "pc_macro_detector_timeout");
+	add_timer_func_list( pc_goldpc_update, "pc_goldpc_update" );
 
 	add_timer(gettick() + autosave_interval, pc_autosave, 0, 0);
 

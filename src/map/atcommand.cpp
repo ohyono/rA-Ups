@@ -24,6 +24,7 @@
 #include <common/utils.hpp>
 
 #include "achievement.hpp"
+#include "aura.hpp"
 #include "battle.hpp"
 #include "buyingstore.hpp"
 #include "channel.hpp"
@@ -1288,33 +1289,34 @@ ACMD_FUNC(kami)
  *------------------------------------------*/
 ACMD_FUNC(heal)
 {
-	int hp = 0, sp = 0; // [Valaris] thanks to fov
+	int hp = 0, sp = 0, ap = 0; // [Valaris] thanks to fov
 	nullpo_retr(-1, sd);
 
-	sscanf(message, "%11d %11d", &hp, &sp);
+	sscanf(message, "%11d %11d", &hp, &sp, &ap);
 
 	// some overflow checks
 	if( hp == INT_MIN ) hp++;
 	if( sp == INT_MIN ) sp++;
+	if( ap == INT_MIN ) ap++;
 
-	if ( hp == 0 && sp == 0 ) {
-		if (!status_percent_heal(&sd->bl, 100, 100))
+	if ( hp == 0 && sp == 0 && ap == 0 ) {
+		if (!status_percent_heal(&sd->bl, 100, 100, 100))
 			clif_displaymessage(fd, msg_txt(sd,157)); // HP and SP have already been recovered.
 		else
 			clif_displaymessage(fd, msg_txt(sd,17)); // HP, SP recovered.
 		return 0;
 	}
 
-	if ( hp > 0 && sp >= 0 ) {
-		if(!status_heal(&sd->bl, hp, sp, 0))
+	if ( hp > 0 && sp >= 0 && ap >= 0 ) {
+		if(!status_heal(&sd->bl, hp, sp, ap))
 			clif_displaymessage(fd, msg_txt(sd,157)); // HP and SP are already with the good value.
 		else
 			clif_displaymessage(fd, msg_txt(sd,17)); // HP, SP recovered.
 		return 0;
 	}
 
-	if ( hp < 0 && sp <= 0 ) {
-		status_damage(NULL, &sd->bl, -hp, -sp, 0, 0, 0);
+	if ( hp < 0 && sp <= 0 && ap <= 0 ) {
+		status_damage(NULL, &sd->bl, -hp, -sp, -ap, 0, 0);
 		clif_damage(&sd->bl,&sd->bl, gettick(), 0, 0, -hp, 0, DMG_ENDURE, 0, false);
 		clif_displaymessage(fd, msg_txt(sd,156)); // HP or/and SP modified.
 		return 0;
@@ -1336,8 +1338,15 @@ ACMD_FUNC(heal)
 		else
 			status_damage(NULL, &sd->bl, 0, -sp, 0, 0, 0);
 	}
+	
+	if ( ap ) {
+		if (ap > 0)
+			status_heal(&sd->bl, 0, 0, ap);
+		else
+			status_damage(NULL, &sd->bl, 0, 0, -ap, 0, 0);
+	}
 
-	clif_displaymessage(fd, msg_txt(sd,156)); // HP or/and SP modified.
+	clif_displaymessage(fd, msg_txt(sd, 822));// AP modified.
 	return 0;
 }
 
@@ -2006,10 +2015,10 @@ ACMD_FUNC(go)
 		char map[MAP_NAME_LENGTH];
 		int x, y;
 	} data[] = {
-		{ MAP_PRONTERA,    156, 191 }, //  0=Prontera
+		{ MAP_PRONTERA,    156, 184 }, //  0=Prontera
 		{ MAP_MORROC,      156,  93 }, //  1=Morroc
 		{ MAP_GEFFEN,      119,  59 }, //  2=Geffen
-		{ MAP_PAYON,       162, 233 }, //  3=Payon
+		{ MAP_PAYON,       172, 105 }, //  3=Payon
 		{ MAP_ALBERTA,     192, 147 }, //  4=Alberta
 #ifdef RENEWAL
 		{ MAP_IZLUDE,      128, 146 }, //  5=Izlude (Renewal)
@@ -2026,11 +2035,13 @@ ACMD_FUNC(go)
 		{ MAP_NIFLHEIM,     21, 153 }, // 13=Niflheim
 		{ MAP_LOUYANG,     217,  40 }, // 14=Louyang
 #ifdef RENEWAL
-		{ MAP_NOVICE,       18, 26  }, // 15=Training Grounds (Renewal)
+		{ MAP_DUMMIES,     106, 96  }, // 15=Dummies
+		//{ MAP_NOVICE,       18, 26  }, // 15=Training Grounds (Renewal)
 #else
 		{ MAP_NOVICE,       53, 111 }, // 15=Training Grounds
 #endif
-		{ MAP_JAIL,         23,  61 }, // 16=Prison
+		//{ MAP_JAIL,         23,  61 }, // 16=Prison
+		{ MAP_MARKET,      100,  99 }, // 16=Market
 		{ MAP_JAWAII,      249, 127 }, // 17=Jawaii
 		{ MAP_AYOTHAYA,    151, 117 }, // 18=Ayothaya
 		{ MAP_EINBROCH,     64, 200 }, // 19=Einbroch
@@ -2051,6 +2062,12 @@ ACMD_FUNC(go)
 		{ MAP_MALAYA,      242, 211 }, // 34=Malaya Port
 		{ MAP_ECLAGE,      110,  39 }, // 35=Eclage
 		{ MAP_LASAGNA,     193, 182 }, // 36=Lasagna
+		{ MAP_ROCKRIDGE,   294, 202 }, // 37=Rock Ridge
+		{ MAP_SPCOR,       127, 130 }, // 38=Special Border Area
+		{ MAP_MAISON,      197, 244 }, // 39=Varmunt's Mansion Garden
+		{ MAP_WOLFVILL,    141, 147 }, // 40=Wolfvill
+		{ MAP_ICECASTLE,   204, 164 }, // 41=Ice Castle
+		{ MAP_QUEST,    	53, 51  }, // 42=Quest Area
 	};
 
 	nullpo_retr(-1, sd);
@@ -2124,13 +2141,11 @@ ACMD_FUNC(go)
 		town = 13;
 	} else if (strncmp(map_name, "louyang", 3) == 0) {
 		town = 14;
-	} else if (strncmp(map_name, "new_1-1", 3) == 0 ||
-	           strncmp(map_name, "startpoint", 3) == 0 ||
-	           strncmp(map_name, "beginning", 3) == 0) {
+	} else if (strncmp(map_name, "tra_fild", 3) == 0 ||
+	           strncmp(map_name, "dummies", 3) == 0) {
 		town = 15;
-	} else if (strncmp(map_name, "sec_pri", 3) == 0 ||
-	           strncmp(map_name, "prison", 3) == 0 ||
-	           strncmp(map_name, "jail", 3) == 0) {
+	} else if (strncmp(map_name, "vend_zone", 3) == 0 ||
+	           strncmp(map_name, "market", 3) == 0) {
 		town = 16;
 	} else if (strncmp(map_name, "jawaii", 3) == 0) {
 		town = 17;
@@ -2172,6 +2187,20 @@ ACMD_FUNC(go)
 		town = 35;
 	} else if (strncmp(map_name, "lasagna", 2) == 0) {
 		town = 36;
+	} else if (strncmp(map_name, "harboro1", 2) == 0) {
+		town = 37;
+	} else if (strncmp(map_name, "sp_cor", 2) == 0) {
+		town = 38;
+	} else if (strncmp(map_name, "ba_maison", 2) == 0) {
+		town = 39;
+	} else if (strncmp(map_name, "wolfvill", 2) == 0) {
+		town = 40;
+	} else if (strncmp(map_name, "icecastle", 2) == 0) {
+		town = 41;
+	} else if (strncmp(map_name, "quest_area", 3) == 0 ||
+	           strcmp(map_name,  "quest_zone") == 0 ||
+	           strncmp(map_name, "quest", 3) == 0) {
+		town = 42;
 	}
 
 	if (town >= 0 && town < ARRAYLENGTH(data))
@@ -2804,12 +2833,12 @@ ACMD_FUNC(zeny)
 	}
 
 	if(zeny > 0){
-	    if((ret=pc_getzeny(sd,zeny,LOG_TYPE_COMMAND,NULL)) == 1)
+	    if((ret=pc_getzeny(sd,zeny,LOG_TYPE_COMMAND)) == 1)
 		clif_displaymessage(fd, msg_txt(sd,149)); // Unable to increase the number/value.
 	}
 	else {
 	    if( sd->status.zeny < -zeny ) zeny = -sd->status.zeny;
-	    if((ret=pc_payzeny(sd,-zeny,LOG_TYPE_COMMAND,NULL)) == 1)
+	    if((ret=pc_payzeny(sd,-zeny,LOG_TYPE_COMMAND)) == 1)
 		clif_displaymessage(fd, msg_txt(sd,41)); // Unable to decrease the number/value.
 	}
 	if(!ret) clif_displaymessage(fd, msg_txt(sd,176)); //ret=0 mean cmd success
@@ -10809,6 +10838,40 @@ ACMD_FUNC( roulette ){
 #endif
 }
 
+/* ===========================================================
+ * 指令: aura
+ * 描述: 激活指定的光环组合
+ * 用法: @aura
+ * 作者: Sola丶小克
+ * -----------------------------------------------------------*/
+ACMD_FUNC(aura) {
+	uint32 aura_id = 0;
+
+	if (!message || !*message || sscanf(message, "%11d", &aura_id) < 1) {
+		clif_displaymessage(fd, "How to use: @Aura <aura number, if it is set to 0, cancel the aura>");
+		clif_displaymessage(fd, "The aura number is defined in the aura combination database of DB/Aura_db.yml. For more information, please check the comments on the top of the database.");
+		return -1;
+	}
+
+	aura_id = max(aura_id, 0);
+
+	if (aura_id && !aura_search(aura_id)) {
+		clif_displaymessage(fd, "Sorry, the specified aura number is invalid, please re-enter after checking.");
+		return -1;
+	}
+
+	aura_make_effective(&sd->bl, aura_id);
+
+	if (aura_id != 0) {
+		clif_displaymessage(fd, "Activated the specified aura effect.");
+	}
+	else {
+		clif_displaymessage(fd, "Turned off the aura effect");
+	}
+
+	return 0;
+}
+
 #include "../custom/atcommand.inc"
 
 /**
@@ -10826,6 +10889,7 @@ void atcommand_basecommands(void) {
 	 **/
 	AtCommandInfo atcommand_base[] = {
 #include "../custom/atcommand_def.inc"
+		ACMD_DEF(aura),
 		ACMD_DEF2R("warp", mapmove, ATCMD_NOCONSOLE),
 		ACMD_DEF(where),
 		ACMD_DEF(jumpto),

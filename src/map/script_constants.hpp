@@ -612,6 +612,7 @@
 	export_parameter(PCDIECOUNTER_VAR, SP_PCDIECOUNTER);
 	export_parameter(COOKMASTERY_VAR, SP_COOKMASTERY);
 	export_parameter(ACHIEVEMENTLEVEL, SP_ACHIEVEMENT_LEVEL);
+	export_parameter(GOLDPC_POINT_VAR, SP_GOLDPC_POINTS);
 
 	export_constant2("bMaxHP",SP_MAXHP);
 	export_constant2("bMaxSP",SP_MAXSP);
@@ -1872,6 +1873,25 @@
 	export_constant(SC_TOXIN_OF_MANDARA);
 	export_constant(SC_GOLDENE_TONE);
 	export_constant(SC_TEMPERING);
+	
+	export_constant(SC_RELIEVE_ON);
+	export_constant(SC_RELIEVE_OFF);
+	export_constant(SC_LOCKON_LASER);
+	export_constant(SC_KILLING_AURA);	
+	export_constant(SC_ALL_STAT_DOWN);
+	export_constant(SC_GRADUAL_GRAVITY);
+	export_constant(SC_DAMAGE_HEAL);
+	export_constant(SC_IMMUNE_PROPERTY);
+	export_constant(SC_IMMUNE_PROPERTY_NOTHING);
+	export_constant(SC_IMMUNE_PROPERTY_WATER);
+	export_constant(SC_IMMUNE_PROPERTY_GROUND);
+	export_constant(SC_IMMUNE_PROPERTY_FIRE);
+	export_constant(SC_IMMUNE_PROPERTY_WIND);
+	export_constant(SC_IMMUNE_PROPERTY_POISON);
+	export_constant(SC_IMMUNE_PROPERTY_SAINT);
+	export_constant(SC_IMMUNE_PROPERTY_DARKNESS);
+	export_constant(SC_IMMUNE_PROPERTY_TELEKINESIS);
+	export_constant(SC_IMMUNE_PROPERTY_UNDEAD);
 	
 	export_constant(SC_RUSH_QUAKE1);
 	export_constant(SC_RUSH_QUAKE2);
@@ -4264,6 +4284,9 @@
 	export_constant(RC2_TEMPLE_DEMON);
 	export_constant(RC2_ILLUSION_VAMPIRE);
 	export_constant(RC2_MALANGDO);
+	export_constant(RC2_EP172ALPHA);
+	export_constant(RC2_EP172BETA);
+	export_constant(RC2_EP172BATH);
 	export_constant(RC2_MAX);
 
 	/* monster ai */
@@ -4862,6 +4885,7 @@
 	export_constant(UMOB_RES);
 	export_constant(UMOB_MRES);
 	export_constant(UMOB_DAMAGETAKEN);
+	export_constant(UMOB_AURA);
 
 	/* unit control - homunculus */
 	export_constant(UHOM_SIZE);
@@ -4905,6 +4929,7 @@
 	export_constant(UHOM_DMOTION);
 	export_constant(UHOM_TARGETID);
 	export_constant(UHOM_GROUP_ID);
+	export_constant(UHOM_AURA);
 
 	/* unit control - pet */
 	export_constant(UPET_SIZE);
@@ -4945,6 +4970,7 @@
 	export_constant(UPET_ADELAY);
 	export_constant(UPET_DMOTION);
 	export_constant(UPET_GROUP_ID);
+	export_constant(UPET_AURA);
 
 	/* unit control - mercenary */
 	export_constant(UMER_SIZE);
@@ -4985,6 +5011,7 @@
 	export_constant(UMER_DMOTION);
 	export_constant(UMER_TARGETID);
 	export_constant(UMER_GROUP_ID);
+	export_constant(UMER_AURA);
 
 	/* unit control - elemental */
 	export_constant(UELE_SIZE);
@@ -5027,6 +5054,7 @@
 	export_constant(UELE_DMOTION);
 	export_constant(UELE_TARGETID);
 	export_constant(UELE_GROUP_ID);
+	export_constant(UELE_AURA);
 
 	/* unit control - NPC */
 	export_deprecated_constant3("UNPC_DISPLAY", UNPC_CLASS, "UNPC_CLASS");
@@ -5076,6 +5104,7 @@
 	export_constant(UNPC_BODY2);
 	export_constant(UNPC_DEADSIT);
 	export_constant(UNPC_GROUP_ID);
+	export_constant(UNPC_AURA);
 
 	export_constant(NAV_NONE);
 	export_constant(NAV_AIRSHIP_ONLY);
@@ -6713,6 +6742,11 @@
 	export_constant(IG_COSTUMEMILEAGE_PACKAGE3);
 	export_constant(IG_COMP_TRANS_SCROLL);
 	export_constant(IG_MINUS_STATUS_BOX);
+	export_constant(IG_AEGIS_101920);
+	export_constant(IG_AEGIS_101921);
+	export_constant(IG_AEGIS_101923);
+	export_constant(IG_AEGIS_101924);
+	export_constant(IG_AEGIS_101925);
 	export_constant(IG_S_W_BREATH_CUBE);
 	export_constant(IG_S_F_BREATH_CUBE);
 	export_constant(IG_S_SONIC_CUBE);
@@ -9420,6 +9454,7 @@
 	export_constant(HAT_EF_SUBJECT_AURA_NAVY);
 	export_constant(HAT_EF_20TH_SCARF_J);
 	export_constant(HAT_EF_GHOST_FIRE);
+	export_constant(HAT_EF_SERPENT_SHADOW);
 
 	/* pet catch */
 	export_constant(PET_CATCH_UNIVERSAL);
@@ -9867,6 +9902,7 @@
 	export_constant(UNT_LIGHTNING_LAND);
 	export_constant(UNT_VENOM_SWAMP);
 	export_constant(UNT_CONFLAGRATION);
+	export_constant(UNT_CANE_OF_EVIL_EYE);
 
 	export_constant(UNT_DEEPBLINDTRAP);
 	export_constant(UNT_SOLIDTRAP);

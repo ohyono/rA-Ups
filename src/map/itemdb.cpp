@@ -2969,7 +2969,7 @@ static void itemdb_pc_get_itemgroup_sub(map_session_data *sd, bool identify, std
 				map_addflooritem(&tmp, tmp.amount, sd->bl.m, sd->bl.x,sd->bl.y, 0, 0, 0, 0, 0);
 		}
 		else if (!flag && data->isAnnounced)
-			intif_broadcast_obtain_special_item(sd, data->nameid, sd->itemid, ITEMOBTAIN_TYPE_BOXITEM);
+			intif_broadcast_obtain_special_item(sd, data->nameid, sd->opened_box_id, ITEMOBTAIN_TYPE_BOXITEM);
 	}
 }
 
@@ -2990,6 +2990,13 @@ uint8 ItemGroupDatabase::pc_get_itemgroup(uint16 group_id, bool identify, map_se
 	}
 	if (group->random.empty())
 		return 0;
+	
+	if (group->announce_box_id != 0) {
+		sd->opened_box_id = group->announce_box_id;
+	}
+	else {
+		sd->opened_box_id = sd->itemid;
+	}
 	
 	// Get all the 'must' item(s) (subgroup 0)
 	uint16 subgroup = 0;
@@ -3254,6 +3261,19 @@ uint64 ItemGroupDatabase::parseBodyNode(const ryml::NodeRef& node) {
 		group->id = id;
 	}
 
+	if (this->nodeExists(node, "AnnounceBoxItemId")) {
+		t_itemid tmp_nameid;
+		if (!this->asUInt32(node, "AnnounceBoxItemId", tmp_nameid)) {
+			this->invalidWarning(node, "Invalid AnnounceBoxItemId node.\n");
+		}
+		if (!item_db.exists(tmp_nameid)) {
+			ShowWarning("ItemGroupDatabase::parseBodyNode: Box item `%u` does not exist. Ignoring.\n", tmp_nameid);
+		}
+		else {
+			group->announce_box_id = tmp_nameid;
+		}
+	}
+	
 	if (this->nodeExists(node, "SubGroups")) {
 		const auto& subNode = node["SubGroups"];
 

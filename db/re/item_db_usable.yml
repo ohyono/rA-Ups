@@ -48634,6 +48634,23 @@ Body:
       NoAuction: true
     Script: |
       getgroupitem(IG_Blessing_Scarlet_Scroll);
+  - Id: 17934
+    AegisName: Costama_Egg64
+    Name: Costama Gothic & Lolita
+    Type: Usable
+    Buy: 10
+    Weight: 100
+    Trade:
+      Override: 100
+      NoDrop: true
+      NoTrade: true
+      NoSell: true
+      NoCart: true
+      NoGuildStorage: true
+      NoMail: true
+      NoAuction: true
+    Script: |
+      getitem callfunc("F_Rand",31450,31449,31452,31453,31451,31416,31397,31446,31447,31448),1;
   - Id: 17780
     AegisName: Cash_Can_Box
     Name: Cash Can Box
@@ -58789,7 +58806,7 @@ Body:
   - Id: 23919
     AegisName: K_Secret_Key
     Name: Kachua's Secret Key
-    Type: Usable
+    Type: Delayconsume
     Trade:
       NoDrop: true
       NoTrade: true
@@ -58799,7 +58816,7 @@ Body:
       NoMail: true
       NoAuction: true
     Script: |
-      /* callfunc "F_Kachua_Key"; */
+      duplicate_dynamic("Kachua's Secret Box#bm");
   - Id: 23921
     AegisName: Season_Evt_Reward
     Name: Event Reward Box
@@ -60006,21 +60023,21 @@ Body:
     Type: Usable
     Weight: 10
     Script: |
-      /* bonus_script "{ bonus2 bAddRace2,RC2_EP172BATH,5; }",900,1,0,EFST_BATH_FOAM_A; */
+      bonus_script "{ bonus2 bAddRace2,RC2_EP172BATH,5; }",900,1,0,EFST_BATH_FOAM_A;
   - Id: 100148
     AegisName: Bath_Foam_B
     Name: Bath Foam B
     Type: Usable
     Weight: 10
     Script: |
-      /* bonus_script "{ bonus2 bAddRace2,RC2_EP172BATH,10; }",900,1,0,EFST_BATH_FOAM_B; */
+      bonus_script "{ bonus2 bAddRace2,RC2_EP172BATH,10; }",900,1,0,EFST_BATH_FOAM_B;
   - Id: 100149
     AegisName: Bath_Foam_C
     Name: Bath Foam C
     Type: Usable
     Weight: 10
     Script: |
-      /* bonus_script "{ bonus2 bAddRace2,RC2_EP172BATH,15; }",900,1,0,EFST_BATH_FOAM_C; */
+      bonus_script "{ bonus2 bAddRace2,RC2_EP172BATH,15; }",900,1,0,EFST_BATH_FOAM_C;
   - Id: 100151
     AegisName: Skill_Sha_M_S_Weapon
     Name: Skill Shadow Weapon Combination Scroll
@@ -62245,6 +62262,12 @@ Body:
       NoAuction: true
     Script: |
       laphine_upgrade();
+  - Id: 101637
+    AegisName: EP19_DGW_Refine
+    Name: Dim Glacier Reinforcement Device
+    Type: DelayConsume
+    Script: |
+      item_reform();
   - Id: 100648
     AegisName: Consecrate_Weapon_1
     Name: Purification Ritual
@@ -64713,6 +64736,13 @@ Body:
     Script: |
       specialeffect2 EF_POTION_BERSERK;
       sc_start SC_INFINITY_DRINK,1800000,0;
+  - Id: 101099
+    AegisName: ClockTower_Regulator
+    Name: Spring Regulator
+    Type: DelayConsume
+    Weight: 10
+    Script: |
+      item_enchant(24);
   - Id: 101103
     AegisName: Enchant_Stone_Box25
     Name: Costume Enchant Stone Box 25
@@ -65446,6 +65476,24 @@ Body:
       BuyingStore: true
     Script: |
       laphine_upgrade();
+  - Id: 101389
+    AegisName: Helm_Of_Faith_Hammer
+    Name: Helm of Faith Refine Hammer
+    Type: DelayConsume
+    Weight: 10
+    Flags:
+      BuyingStore: true
+    Script: |
+      item_reform();
+  - Id: 101390
+    AegisName: Clock_Tower_W_Hammer
+    Name: Clock Tower Basement Refine Hammer
+    Type: DelayConsume
+    Weight: 10
+    Flags:
+      BuyingStore: true
+    Script: |
+      item_reform();
   - Id: 101416
     AegisName: aegis_101416
     Name: Costume Enchant Stone Box 27
@@ -66084,6 +66132,65 @@ Body:
       Container: true
     Script: |
       getgroupitem(IG_Enchant_Stone_Box30);
+  - Id: 101919
+    AegisName: aegis_101919
+    Name: Experience Shadow Selection Box    # !todo check english name
+    Type: Usable
+    Weight: 10
+    Flags:
+      BuyingStore: true
+  - Id: 101920
+    AegisName: aegis_101920
+    Name: Experience Weapon Shadow Box    # !todo check english name
+    Type: Usable
+    Weight: 10
+    Flags:
+      Container: true
+    Script: |
+      getgroupitem(IG_AEGIS_101920);
+  - Id: 101921
+    AegisName: aegis_101921
+    Name: Experience Shield Shadow Box    # !todo check english name
+    Type: Usable
+    Weight: 10
+    Flags:
+      Container: true
+    Script: |
+      getgroupitem(IG_AEGIS_101921);
+  - Id: 101922
+    AegisName: aegis_101922
+    Name: Mega Blitz Shadow Selection Box    # !todo check english name
+    Type: Usable
+    Weight: 10
+    Flags:
+      BuyingStore: true
+  - Id: 101923
+    AegisName: aegis_101923
+    Name: Mega Blitz Weapon Shadow Box    # !todo check english name
+    Type: Usable
+    Weight: 10
+    Flags:
+      Container: true
+    Script: |
+      getgroupitem(IG_AEGIS_101923);
+  - Id: 101924
+    AegisName: aegis_101924
+    Name: Mega Blitz Shield Shadow Box    # !todo check english name
+    Type: Usable
+    Weight: 10
+    Flags:
+      Container: true
+    Script: |
+      getgroupitem(IG_AEGIS_101924);
+  - Id: 101925
+    AegisName: aegis_101925
+    Name: Convertible Wing Box    # !todo check english name
+    Type: Usable
+    Flags:
+      BuyingStore: true
+      Container: true
+    Script: |
+      getgroupitem(IG_AEGIS_101925);
   - Id: 200003
     AegisName: LI_HD_Oridecon_Box2
     Name: (Limited) HD Oridecon Box(Blacksmith)(30)

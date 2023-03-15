@@ -25,6 +25,7 @@
 
 #include "achievement.hpp"
 #include "atcommand.hpp"
+#include "aura.hpp"
 #include "battle.hpp"
 #include "battleground.hpp"
 #include "cashshop.hpp"
@@ -4872,6 +4873,7 @@ void MapServer::finalize(){
 	do_final_achievement();
 	do_final_script();
 	do_final_instance();
+	do_final_aura();
 	do_final_itemdb();
 	do_final_storage();
 	do_final_guild();
@@ -5224,6 +5226,7 @@ bool MapServer::initialize( int argc, char *argv[] ){
 #endif
 	do_init_script();
 	do_init_itemdb();
+	do_init_aura();
 	do_init_channel();
 	do_init_cashshop();
 	do_init_skill();

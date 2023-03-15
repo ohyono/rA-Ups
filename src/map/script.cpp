@@ -33,6 +33,7 @@
 
 #include "achievement.hpp"
 #include "atcommand.hpp"
+#include "aura.hpp"
 #include "battle.hpp"
 #include "battleground.hpp"
 #include "cashshop.hpp"
@@ -62,6 +63,8 @@
 #include "pet.hpp"
 #include "quest.hpp"
 #include "storage.hpp"
+
+s_next_dropitem_special next_dropitem_special;
 
 using namespace rathena;
 
@@ -8185,11 +8188,7 @@ BUILDIN_FUNC(makeitem) {
 		item_tmp.identify = 1;
 	else
 		item_tmp.identify = itemdb_isidentified(nameid);
-#ifdef Pandas_BattleConfig_Force_Identified
-		item_tmp.identify = (battle_config.force_identified & 32 ? 1 : item_tmp.identify);
-#endif // Pandas_BattleConfig_Force_Identified
-
-#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
+	
 	if (next_dropitem_special.bound != -1) {
 		item_tmp.bound = cap_value(next_dropitem_special.bound, BOUND_NONE, BOUND_MAX - 1);
 		next_dropitem_special.bound = -1;
@@ -8198,7 +8197,6 @@ BUILDIN_FUNC(makeitem) {
 		item_tmp.expire_time = (unsigned int)(time(NULL) + next_dropitem_special.rent_duration);
 		next_dropitem_special.rent_duration = 0;
 	}
-#endif // Pandas_ScriptCommand_Next_Dropitem_Special
 
 	map_addflooritem(&item_tmp, amount, m, x, y, 0, 0, 0, 4, 0, canShowEffect);
 	return SCRIPT_CMD_SUCCESS;
@@ -8277,9 +8275,6 @@ BUILDIN_FUNC(makeitem2) {
 		}
 
 		item_tmp.identify = iden;
-#ifdef Pandas_BattleConfig_Force_Identified
-		item_tmp.identify = (battle_config.force_identified & 32 ? 1 : item_tmp.identify);
-#endif // Pandas_BattleConfig_Force_Identified
 		item_tmp.refine = ref;
 		item_tmp.attribute = attr;
 		item_tmp.card[0] = script_getnum(st,10);
@@ -8287,7 +8282,6 @@ BUILDIN_FUNC(makeitem2) {
 		item_tmp.card[2] = script_getnum(st,12);
 		item_tmp.card[3] = script_getnum(st,13);
 
-#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
 		if (next_dropitem_special.bound != -1) {
 			item_tmp.bound = cap_value(next_dropitem_special.bound, BOUND_NONE, BOUND_MAX - 1);
 			next_dropitem_special.bound = -1;
@@ -8296,7 +8290,6 @@ BUILDIN_FUNC(makeitem2) {
 			item_tmp.expire_time = (unsigned int)(time(NULL) + next_dropitem_special.rent_duration);
 			next_dropitem_special.rent_duration = 0;
 		}
-#endif // Pandas_ScriptCommand_Next_Dropitem_Special
 
 		bool canShowEffect = false;
 
@@ -13192,7 +13185,7 @@ BUILDIN_FUNC(warpwaitingpc)
 			{// no zeny to cover set fee
 				break;
 			}
-			pc_payzeny(sd, cd->zeny, LOG_TYPE_NPC, NULL);
+			pc_payzeny(sd, cd->zeny, LOG_TYPE_NPC);
 		}
 
 		mapreg_setreg(reference_uid(add_str("$@warpwaitingpc"), i), sd->bl.id);
@@ -19236,6 +19229,7 @@ BUILDIN_FUNC(setunitdata)
 			case UMOB_RES: md->base_status->res = (short)value; calc_status = true; break;
 			case UMOB_MRES: md->base_status->mres = (short)value; calc_status = true; break;
 			case UMOB_DAMAGETAKEN: md->damagetaken = (unsigned short)value; break;
+			case UMOB_AURA: aura_make_effective(bl, value); break;
 			default:
 				ShowError("buildin_setunitdata: Unknown data identifier %d for BL_MOB.\n", type);
 				return SCRIPT_CMD_FAILURE;
@@ -19303,6 +19297,7 @@ BUILDIN_FUNC(setunitdata)
 				break;
 			}
 			case UHOM_GROUP_ID: hd->ud.group_id = value; unit_refresh(bl); break;
+			case UHOM_AURA: aura_make_effective(bl, value); break;
 			default:
 				ShowError("buildin_setunitdata: Unknown data identifier %d for BL_HOM.\n", type);
 				return SCRIPT_CMD_FAILURE;
@@ -19355,6 +19350,7 @@ BUILDIN_FUNC(setunitdata)
 			case UPET_ADELAY: pd->status.adelay = (short)value; break;
 			case UPET_DMOTION: pd->status.dmotion = (short)value; break;
 			case UPET_GROUP_ID: pd->ud.group_id = value; unit_refresh(bl); break;
+			case UPET_AURA: aura_make_effective(bl, value); break;
 			default:
 				ShowError("buildin_setunitdata: Unknown data identifier %d for BL_PET.\n", type);
 				return SCRIPT_CMD_FAILURE;
@@ -19417,6 +19413,7 @@ BUILDIN_FUNC(setunitdata)
 				break;
 			}
 			case UMER_GROUP_ID: mc->ud.group_id = value; unit_refresh(bl); break;
+			case UMER_AURA: aura_make_effective(bl, value); break;
 			default:
 				ShowError("buildin_setunitdata: Unknown data identifier %d for BL_MER.\n", type);
 				return SCRIPT_CMD_FAILURE;
@@ -19484,6 +19481,7 @@ BUILDIN_FUNC(setunitdata)
 				break;
 			}
 			case UELE_GROUP_ID: ed->ud.group_id = value; unit_refresh(bl); break;
+			case UELE_AURA: aura_make_effective(bl, value); break;
 			default:
 				ShowError("buildin_setunitdata: Unknown data identifier %d for BL_ELEM.\n", type);
 				return SCRIPT_CMD_FAILURE;
@@ -19543,6 +19541,7 @@ BUILDIN_FUNC(setunitdata)
 			case UNPC_BODY2: clif_changelook(bl, LOOK_BODY2, (unsigned short)value); break;
 			case UNPC_DEADSIT: nd->vd.dead_sit = (char)value; unit_refresh(bl); break;
 			case UNPC_GROUP_ID: nd->ud.group_id = value; unit_refresh(bl); break;
+			case UNPC_AURA: aura_make_effective(bl, value); break;
 			default:
 				ShowError("buildin_setunitdata: Unknown data identifier %d for BL_NPC.\n", type);
 				return SCRIPT_CMD_FAILURE;
@@ -20801,6 +20800,7 @@ BUILDIN_FUNC(erasequest)
 		script_reportsrc(st);
 		script_reportfunc(st);
 	}
+	pc_show_questinfo(sd);
 
 	return SCRIPT_CMD_SUCCESS;
 }
@@ -26986,6 +26986,73 @@ BUILDIN_FUNC(macro_detector) {
 	return SCRIPT_CMD_SUCCESS;
 }
 
+//MUH IMPORTED / CUSTOM / PANDAWS
+/* ===========================================================
+ * 指令: aura
+ * 描述: 激活指定的光环组合
+ * 用法: aura <光环编号>{,<角色编号>};
+ * 返回: 成功返回 1 失败返回 0
+ * 作者: Sola丶小克
+ * -----------------------------------------------------------*/
+BUILDIN_FUNC(aura) {
+	uint32 aura_id = script_getnum(st, 2);
+	map_session_data* sd = nullptr;
+
+	if (!script_charid2sd(3, sd)) {
+		script_pushint(st, 0);
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	aura_id = max(aura_id, 0);
+
+	if (aura_id && !aura_search(aura_id)) {
+		ShowError("buildin_aura: The specified aura id '%d' is invalid.\n", aura_id);
+		script_pushint(st, 0);
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	aura_make_effective(&sd->bl, aura_id);
+
+	script_pushint(st, 1);
+	return SCRIPT_CMD_SUCCESS;
+}
+/* ===========================================================
+ * 指令: unitaura
+ * 描述: 用于调整七种单位的光环组合 (但仅 BL_PC 会被持久化)
+ * 用法: unitaura <单位编号>,<光环编号>;
+ * 返回: 成功返回 1 失败返回 0
+ * 作者: Sola丶小克
+ * -----------------------------------------------------------*/
+BUILDIN_FUNC(unitaura) {
+	uint32 aura_id = script_getnum(st, 3);
+	struct s_unit_common_data* ucd = nullptr;
+	struct block_list* bl = nullptr;
+
+	if (!script_rid2bl(2, bl)) {
+		script_pushint(st, 0);
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	ucd = status_get_ucd(bl);
+	if (!ucd) {
+		script_pushint(st, 0);
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	aura_id = max(aura_id, 0);
+
+	if (aura_id && !aura_search(aura_id)) {
+		ShowError("buildin_unitaura: The specified aura id '%d' is invalid.\n", aura_id);
+		script_pushint(st, 0);
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	aura_make_effective(bl, aura_id);
+
+	script_pushint(st, 1);
+	return SCRIPT_CMD_SUCCESS;
+}
+
 #include "../custom/script.inc"
 
 // declarations that were supposed to be exported from npc_chat.cpp
@@ -27034,13 +27101,54 @@ BUILDIN_FUNC(preg_match) {
 #endif
 }
 
-#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
 /* ===========================================================
- * Command: next_dropitem_special
- * Description: Special settings for the next item dropped on the ground
- * Usage: next_dropitem_special <prop item binding type>,<rental duration>,<drop item color>;
- * Return: Whether the command is successful or not, there will be no return value
- * Author: Sola, Xiao Ke
+ * 指令: unitspecialeffect
+ * 描述: 使指定游戏单位可以显示某个特效, 并支持控制特效可见范围
+ * 用法: unitspecialeffect <游戏单位编号>,<特效编号>{,<谁能看见特效>{,<能看见特效的账号编号>}};
+ * 返回: 该指令无论成功与否, 都不会有返回值
+ * 作者: 人鱼姬的思念
+ * -----------------------------------------------------------*/
+BUILDIN_FUNC(unitspecialeffect) {
+	struct block_list* bl = nullptr;
+	int type = script_getnum(st, 3);
+	enum send_target target = AREA;
+
+	bl = map_id2bl(script_getnum(st, 2));
+	if (!bl) {
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	if (script_hasdata(st, 4)) {
+		target = (send_target)script_getnum(st, 4);
+	}
+
+	if (type <= EF_NONE || type >= EF_MAX) {
+		ShowError("buildin_unitspecialeffect: unsupported effect id %d\n", type);
+		return SCRIPT_CMD_FAILURE;
+	}
+
+	if (target != SELF) {
+		clif_specialeffect(bl, type, target);
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	map_session_data* sd = nullptr;
+	if (!script_mapid2sd(5, sd)) {
+		return SCRIPT_CMD_SUCCESS;
+	}
+
+	if (sd && sd->bl.type == BL_PC) {
+		clif_specialeffect_single(bl, type, sd->fd);
+	}
+	return SCRIPT_CMD_SUCCESS;
+}
+
+/* ===========================================================
+ * 指令: next_dropitem_special
+ * 描述: 对下一个掉落到地面上的物品进行特殊设置
+ * 用法: next_dropitem_special <道具绑定类型>,<租赁时长>,<掉落光柱颜色>;
+ * 返回: 该指令无论成功与否, 都不会有返回值
+ * 作者: Sola丶小克
  * -----------------------------------------------------------*/
 BUILDIN_FUNC(next_dropitem_special) {
 	next_dropitem_special.bound = cap_value(script_getnum(st, 2), BOUND_NONE, BOUND_MAX - 1);
@@ -27048,7 +27156,33 @@ BUILDIN_FUNC(next_dropitem_special) {
 	next_dropitem_special.drop_effect = cap_value(script_getnum(st, 4), -1, DROPEFFECT_MAX - 1);
 	return SCRIPT_CMD_SUCCESS;
 }
-#endif // Pandas_ScriptCommand_Next_Dropitem_Special
+
+/* ===========================================================
+ * 指令: mobremove
+ * 描述: 根据 GID 移除一个魔物单位 (只是移除, 不会让魔物死亡)
+ * 用法: mobremove <魔物的GID>;
+ * 返回: 该指令无论成功失败, 都不会有返回值
+ * 作者: Sola丶小克
+ * -----------------------------------------------------------*/
+BUILDIN_FUNC(mobremove) {
+	struct block_list *bl = nullptr;
+	bl = map_id2bl(script_getnum(st, 2));
+
+	if (!bl || bl->type != BL_MOB)
+		return SCRIPT_CMD_SUCCESS;
+
+	TBL_MOB* md = (TBL_MOB*)bl;
+
+	if (!md->spawn)
+		unit_free(bl, CLR_OUTSIGHT);
+	else {
+		unit_remove_map(bl, CLR_OUTSIGHT);
+		if (!(md->sc.getSCE(SC_KAIZEL) || (md->sc.getSCE(SC_REBIRTH) && !md->state.rebirth)))
+			mob_setdelayspawn(md);
+	}
+
+	return SCRIPT_CMD_SUCCESS;
+}
 
 /// script command definitions
 /// for an explanation on args, see add_buildin_func
@@ -27759,10 +27893,12 @@ struct script_function buildin_func[] = {
 	BUILDIN_DEF(getfamerank, "?"),
 	BUILDIN_DEF(isdead, "?"),
 	BUILDIN_DEF(macro_detector, "?"),
-#ifdef Pandas_ScriptCommand_Next_Dropitem_Special
-	BUILDIN_DEF(next_dropitem_special,"iii"),			// Special settings for the next item that falls on the ground [Sola, Xiaogram]
-#endif // Pandas_ScriptCommand_Next_Dropitem_Special
-
+	
+	BUILDIN_DEF(aura, "i?"),
+	BUILDIN_DEF(unitaura, "ii"),
+	BUILDIN_DEF(unitspecialeffect, "ii??"),
+	BUILDIN_DEF(next_dropitem_special,"iii"),
+	BUILDIN_DEF(mobremove,"i"),
 #include "../custom/script_def.inc"
 
 	{NULL,NULL,NULL},

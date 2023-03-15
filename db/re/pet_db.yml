@@ -1582,6 +1582,47 @@ Body:
 #            Amount: 10
 #          - Item: Voucher_Of_Orcish_Hero
 #            Amount: 10
+  - Mob: EP17_2_CHILD_ADMIN1
+    CaptureRate : 1000
+    EggItem: Ep17_2_C_Admin1_Egg
+    EquipItem: Ep_17_2_C_Admin1_Acc
+    FoodItem: Cloud_Cotton
+    Fullness: 2
+    IntimacyFed: 20
+    Script: >
+      .@i = getpetinfo(PETINFO_INTIMATE);
+      if (.@i >= PET_INTIMATE_LOYAL) {
+        bonus2 bAddRace2,RC2_EP172BETA,10;
+      } else if (.@i >= PET_INTIMATE_CORDIAL) {
+        bonus2 bAddRace2,RC2_EP172BETA,6;
+      } else if (.@i >= PET_INTIMATE_NEUTRAL) {
+        bonus2 bAddRace2,RC2_EP172BETA,3;
+      }
+    Evolution:
+      - Target: EP17_2_CHILD_ADMIN2
+        ItemRequirements:
+          - Item: Mystery_Piece
+            Amount: 10
+          - Item: Broken_Steel_Piece
+            Amount: 50
+          - Item: BarMealTicket
+            Amount: 500
+  - Mob: EP17_2_CHILD_ADMIN2
+    CaptureRate : 1000
+    EggItem: Ep17_2_C_Admin2_Egg
+    EquipItem: Ep_17_2_C_Admin2_Acc
+    FoodItem: Pet_Food
+    Fullness: 2
+    IntimacyFed: 20
+    Script: >
+      .@i = getpetinfo(PETINFO_INTIMATE);
+      if (.@i >= PET_INTIMATE_LOYAL) {
+        bonus2 bAddRace2,RC2_EP172ALPHA,15;
+      } else if (.@i >= PET_INTIMATE_CORDIAL) {
+        bonus2 bAddRace2,RC2_EP172ALPHA,8;
+      } else if (.@i >= PET_INTIMATE_NEUTRAL) {
+        bonus2 bAddRace2,RC2_EP172ALPHA,4;
+      }
   - Mob: CHOCO
     EggItem: Choco_Egg
     FoodItem: Pet_Food

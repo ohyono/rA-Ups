@@ -63,6 +63,14 @@ enum sc_type : int16;
 #define ATTENDANCE_DATE_VAR "#AttendanceDate"
 #define ATTENDANCE_COUNT_VAR "#AttendanceCounter"
 #define ACHIEVEMENTLEVEL "AchievementLevel"
+#ifndef GOLDPC_POINT_VAR
+	#define GOLDPC_POINT_VAR "Goldpc_Points"
+#endif
+#ifndef GOLDPC_SECONDS_VAR
+	#define GOLDPC_SECONDS_VAR "Goldpc_Seconds"
+#endif
+
+#define AURA_VARIABLE "PANDAS_AURASET"
 
 //Total number of classes (for data storage)
 #define CLASS_COUNT (JOB_MAX - JOB_NOVICE_HIGH + JOB_MAX_BASIC)
@@ -789,6 +797,7 @@ public:
 		uint32 pending_weight;
 		uint32 pending_zeny;
 		uint16 pending_slots;
+		uint32 dest_id;
 	} mail;
 
 	//Quest log system
@@ -918,7 +927,9 @@ public:
 	e_instance_mode instance_mode; ///< Mode of instance player last leaves from (used for instance destruction button)
 
 	short setlook_head_top, setlook_head_mid, setlook_head_bottom, setlook_robe; ///< Stores 'setlook' script command values.
-
+	
+	struct s_unit_common_data ucd;
+	
 #if PACKETVER_MAIN_NUM >= 20150507 || PACKETVER_RE_NUM >= 20150429 || defined(PACKETVER_ZERO)
 	std::vector<int16> hatEffects;
 #endif
@@ -936,6 +947,11 @@ public:
 	} captcha_upload;
 
 	s_macro_detect macro_detect;
+	
+	// The last item the player used before getgroupitem script command is called. Used in broadcast packet only
+	t_itemid opened_box_id;
+	
+	int goldpc_tid;
 
 	std::vector<uint32> party_booking_requests;
 };
@@ -1418,9 +1434,9 @@ bool pc_memo(map_session_data* sd, int pos);
 char pc_checkadditem(map_session_data *sd, t_itemid nameid, int amount);
 uint8 pc_inventoryblank(map_session_data *sd);
 short pc_search_inventory(map_session_data *sd, t_itemid nameid);
-char pc_payzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, map_session_data *tsd);
+char pc_payzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, uint32 log_charid = 0);
 enum e_additem_result pc_additem(map_session_data *sd, struct item *item, int amount, e_log_pick_type log_type);
-char pc_getzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, map_session_data *tsd);
+char pc_getzeny(map_session_data *sd, int zeny, enum e_log_pick_type type, uint32 log_charid = 0);
 char pc_delitem(map_session_data *sd, int n, int amount, int type, short reason, e_log_pick_type log_type);
 
 uint64 pc_generate_unique_id(map_session_data *sd);
@@ -1528,7 +1544,7 @@ int pc_dead(map_session_data *sd,struct block_list *src);
 void pc_revive(map_session_data *sd,unsigned int hp, unsigned int sp, unsigned int ap = 0);
 bool pc_revive_item(map_session_data *sd);
 void pc_heal(map_session_data *sd,unsigned int hp,unsigned int sp, unsigned int ap, int type);
-int pc_itemheal(map_session_data *sd, t_itemid itemid, int hp,int sp);
+int pc_itemheal(struct map_session_data *sd, t_itemid itemid, int hp,int sp, int ap);
 int pc_percentheal(map_session_data *sd,int,int);
 bool pc_jobchange(map_session_data *sd, int job, char upper);
 void pc_setoption(map_session_data *,int type, int subtype = 0);
@@ -1748,5 +1764,7 @@ void pc_macro_reporter_process(map_session_data &sd, int32 reporter_account_id =
 #ifdef MAP_GENERATOR
 void pc_reputation_generate();
 #endif
+
+TIMER_FUNC(pc_goldpc_update);
 
 #endif /* PC_HPP */
